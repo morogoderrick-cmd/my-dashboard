@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Dashboard</title>
+<meta name="description" content="A private personal dashboard: tasks, goals, habits, mood, sleep, budget and reviews. Data stays in your browser.">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9eff4;--card:#fff;--ink:#1b2733;--mute:#5d6b78;--line:#d3dde6;--a:#1f7a8c;--b:#d99a00;--bad:#c2410c;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101820;--card:#18232d;--ink:#e8eef3;--mute:#93a3b1;--line:#2a3945;--a:#4fb3c6;--b:#f0b429;--bad:#fb923c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101820;--card:#18232d;--ink:#e8eef3;--mute:#93a3b1;--line:#2a3945;--a:#4fb3c6;--b:#f0b429;--bad:#fb923c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Bricolage Grotesque",system-ui,sans-serif}
+main{max-width:1040px;margin:0 auto;padding:20px 16px 40px}
+header{margin:12px 0 22px}
+h1{font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.02em}
+header p{margin:6px 0 0;color:var(--mute)}
+#name{border:0;border-bottom:2px dashed var(--line);background:transparent;color:var(--a);font:inherit;width:7ch;min-width:3ch;padding:0}
+#name:focus{outline:none;border-color:var(--a)}
+.grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}}
+section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+h2{margin:0 0 12px;font-size:1.15rem;font-weight:600;display:flex;justify-content:space-between;align-items:baseline}
+h2 small{color:var(--mute);font-weight:400;font-size:.85rem}
+form{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+input,select,button{font:inherit;color:var(--ink)}
+input,select{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--a);outline-offset:2px}
+.btn{background:var(--a);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#0b1218}}
+.ghost{background:none;border:0;color:var(--mute);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:1rem}
+.ghost:hover{color:var(--bad)}
+ul{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+li:last-child{border:0}
+li.done span{text-decoration:line-through;color:var(--mute)}
+li span{flex:1}
+input[type=checkbox]{flex:none;width:20px;height:20px;accent-color:var(--a)}
+.empty{color:var(--mute);padding:8px 0}
+.goal{padding:10px 0;border-bottom:1px solid var(--line)}
+.goal:last-child{border:0}
+.goal .row{display:flex;align-items:center;gap:6px}
+.goal .row b{flex:1;font-weight:600}
+.bar{height:10px;background:var(--bg);border-radius:6px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--a);border-radius:6px;transition:width .3s}
+.stats{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px}
+.stats div{font-size:.85rem;color:var(--mute)}
+.stats strong{display:block;font-size:1.6rem;color:var(--ink);font-weight:800}
+.stats .left strong{color:var(--a)}
+.stats .neg strong{color:var(--bad)}
+.cat{display:grid;grid-template-columns:90px 1fr 70px;gap:8px;align-items:center;font-size:.9rem;margin:6px 0}
+.cat .bar{margin:0}
+.cat .bar i{background:var(--b)}
+.cat em{font-style:normal;text-align:right}
+.tx{max-height:200px;overflow:auto;margin-top:10px}
+.tx li{font-size:.9rem}
+.tx .amt{flex:none;font-weight:600}
+.theme{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px}
+.streak{color:var(--b);font-weight:800;min-width:3.2ch;text-align:right}
+.tick{background:none;border:2px solid var(--a);color:var(--a);border-radius:8px;padding:5px 10px;font-weight:600;cursor:pointer}
+.tick.on{background:var(--a);color:#fff}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .tick.on{color:#0b1218}}
+.note small{display:block;color:var(--mute)}
+[hidden]{display:none!important}
+td,th{padding:7px 8px}
+</style>
+</head>
+<body>
+<button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
+<main>
+<header>
+<h1><span id="hello">Good evening</span>, <input id="name" value="friend" aria-label="Your name" maxlength="16"></h1>
+<p id="date"></p>
+<p id="cloud" style="font-size:.85rem;margin:2px 0 0"></p>
+</header>
+<nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button></nav>
+<div class="grid" id="vdash">
+<section>
+<h2>Top tasks <small id="tcount"></small></h2>
+<ul id="tasks"></ul>
+<form id="tform"><input id="tin" placeholder="Add a task for tomorrow" aria-label="New task" required><input type="date" id="tdue" aria-label="Due date" style="flex:none;width:auto"><button class="btn">Add task</button></form>
+</section>
+<section>
+<h2>Goals <small>tap + or − to update</small></h2>
+<div id="goals"></div>
+<form id="gform"><input id="gin" placeholder="New goal, e.g. Read 12 books" aria-label="New goal" required><button class="btn">Add goal</button></form>
+</section>
+<section>
+<h2>Habits <small>streak = days in a row</small></h2>
+<ul id="habits"></ul>
+<form id="hform"><input id="hin" placeholder="New habit, e.g. Drink water" aria-label="New habit" required><button class="btn">Add habit</button></form>
+</section>
+<section>
+<h2>Gratitude <small id="ntoday"></small></h2>
+<ul id="notes"></ul>
+<form id="nform"><input id="nin" placeholder="One good thing from today" aria-label="Gratitude note" required><button class="btn">Save note</button></form>
+</section>
+<section>
+<h2>Mood <small>how was today?</small></h2>
+<div style="display:flex;gap:8px;margin-bottom:12px" id="moodbtns"></div>
+<div style="display:flex;gap:6px" id="moodchart"></div>
+</section>
+<section>
+<h2>Weekly review <small>last 7 days</small></h2>
+<ul id="review"></ul>
+</section>
+<section>
+<h2>Sleep log <small>last night</small></h2>
+<form id="sform" style="margin:0 0 10px"><label>Bedtime<input type="time" id="sbed" required></label><label>Wake up<input type="time" id="swake" required></label><button class="btn">Log sleep</button></form>
+<p id="sleepinfo" class="empty"></p>
+</section>
+<section>
+<h2>Bedtime routine <small>resets daily</small></h2>
+<ul id="routine"></ul>
+</section>
+<section>
+<h2>Water <small id="wcount"></small></h2>
+<div id="glasses" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+</section>
+<section>
+<h2>Ideas and notes</h2>
+<ul id="ideas"></ul>
+<form id="iform"><input id="iin" placeholder="Get it out of your head" aria-label="New idea" required><button class="btn">Add</button></form>
+</section>
+<section class="wide">
+<h2>Budget <small>this month</small></h2>
+<div class="stats">
+<div>Income<strong id="inc">0</strong></div>
+<div>Spent<strong id="exp">0</strong></div>
+<div class="left" id="leftbox">Left<strong id="left">0</strong></div>
+</div>
+<div id="cats"></div>
+<form id="bform">
+<select id="btype" aria-label="Type"><option value="exp">Expense</option><option value="inc">Income</option></select>
+<select id="bcat" aria-label="Category"><option>Food</option><option>Transport</option><option>Bills</option><option>Fun</option><option>Other</option></select>
+<input id="bamt" type="number" min="0" step="any" placeholder="Amount" aria-label="Amount" required>
+<button class="btn">Add entry</button>
+</form>
+<ul class="tx" id="tx"></ul>
+</section>
+</div>
+<div class="grid" id="vtoday"></div>
+<div class="grid" id="vweek" hidden></div>
+<div class="grid" id="vmonth" hidden></div>
+<div class="grid" id="vyear" hidden></div>
+<div class="grid" id="vyears" hidden></div>
+<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dl">Download my data</button><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
+let S=DEF();
+try{const r=localStorage.getItem("dash1");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+let ref=null,tm;
+const save=()=>{try{localStorage.setItem("dash1",JSON.stringify(S))}catch(e){}if(ref){clearTimeout(tm);tm=setTimeout(()=>{ref.set({json:JSON.stringify(S)}).then(()=>setCloud("Backed up to your account")).catch(()=>setCloud("Backup failed, saved on this device only"))},600)}};
+function setCloud(t){const c=$("cloud");if(c)c.textContent=t}
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=n=>(S.cur?S.cur+" ":"")+n.toLocaleString(undefined,{maximumFractionDigits:2});
+const h=new Date().getHours();
+$("hello").textContent=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+$("date").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+$("name").value=S.name;
+$("name").oninput=e=>{S.name=e.target.value;save()};
+if(S.theme)document.documentElement.dataset.theme=S.theme;
+$("theme").onclick=()=>{const dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;S.theme=dark?"light":"dark";document.documentElement.dataset.theme=S.theme;save()};
+function render(){
+ $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${!t.d&&t.u<today()?"var(--bad)":"var(--mute)"}">${!t.d&&t.u<today()?"overdue ":"due "}${t.u}</small>`:""}</span><button class="ghost" data-dt="${i}" aria-label="Delete task">✕</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
+ $("tcount").textContent=S.tasks.filter(t=>t.d).length+" of "+S.tasks.length+" done";
+ $("goals").innerHTML=S.goals.length?S.goals.map((g,i)=>`<div class="goal"><div class="row"><b>${esc(g.x)}</b><span>${g.p}%</span><button class="ghost" data-gm="${i}" aria-label="Decrease">−</button><button class="ghost" data-gp="${i}" aria-label="Increase">+</button><button class="ghost" data-dg="${i}" aria-label="Delete goal">✕</button></div><div class="bar"><i style="width:${g.p}%"></i></div></div>`).join(""):'<div class="empty">No goals yet. Add one you want to move forward this month.</div>';
+ const inc=S.tx.filter(t=>t.t==="inc").reduce((a,t)=>a+t.a,0),exp=S.tx.filter(t=>t.t==="exp").reduce((a,t)=>a+t.a,0);
+ $("inc").textContent=fmt(inc);$("exp").textContent=fmt(exp);$("left").textContent=fmt(inc-exp);
+ $("leftbox").className=inc-exp<0?"neg":"left";
+ const by={};S.tx.filter(t=>t.t==="exp").forEach(t=>by[t.c]=(by[t.c]||0)+t.a);
+ const mx=Math.max(1,...Object.values(by));
+ $("cats").innerHTML=Object.keys(by).length?Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="cat"><span>${esc(c)}</span><div class="bar"><i style="width:${v/mx*100}%"></i></div><em>${fmt(v)}</em></div>`).join(""):'<div class="empty">Add an expense to see where your money goes.</div>';
+ $("tx").innerHTML=S.tx.slice().reverse().map((t,j)=>{const i=S.tx.length-1-j;return `<li><span>${esc(t.c)}</span><span class="amt">${t.t==="inc"?"+":"−"}${fmt(t.a)}</span><button class="ghost" data-dx="${i}" aria-label="Delete entry">✕</button></li>`}).join("");
+}
+document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
+ if(d.dt!==undefined)S.tasks.splice(+d.dt,1);
+ else if(d.dg!==undefined)S.goals.splice(+d.dg,1);
+ else if(d.dx!==undefined)S.tx.splice(+d.dx,1);
+ else if(d.gp!==undefined)S.goals[+d.gp].p=Math.min(100,S.goals[+d.gp].p+10);
+ else if(d.gm!==undefined)S.goals[+d.gm].p=Math.max(0,S.goals[+d.gm].p-10);
+ else return;
+ save();render()});
+$("tasks").addEventListener("change",e=>{const i=e.target.dataset.t;if(i===undefined)return;S.tasks[+i].d=e.target.checked;save();render()});
+$("tform").onsubmit=e=>{e.preventDefault();S.tasks.push({x:$("tin").value.trim(),d:false,u:$("tdue").value});$("tdue").value="";$("tin").value="";save();render()};
+$("gform").onsubmit=e=>{e.preventDefault();S.goals.push({x:$("gin").value.trim(),p:0});$("gin").value="";save();render()};
+$("bform").onsubmit=e=>{e.preventDefault();const a=parseFloat($("bamt").value);if(!(a>0))return;S.tx.push({t:$("btype").value,c:$("btype").value==="inc"?"Income":$("bcat").value,a,d:today()});$("bamt").value="";save();render()};
+const key=d=>d.toLocaleDateString("en-CA");
+const today=()=>key(new Date());
+function streak(days){let n=0,d=new Date();if(!days.includes(key(d)))d.setDate(d.getDate()-1);while(days.includes(key(d))){n++;d.setDate(d.getDate()-1)}return n}
+function extra(){
+ const t=today();
+ $("habits").innerHTML=S.habits.length?S.habits.map((x,i)=>{const on=x.days.includes(t);return `<li><span>${esc(x.x)}</span><b class="streak">${streak(x.days)}🔥</b><button class="tick ${on?"on":""}" data-hd="${i}" aria-pressed="${on}">${on?"Done":"Mark done"}</button><button class="ghost" data-hx="${i}" aria-label="Delete habit">✕</button></li>`}).join(""):'<li class="empty">No habits yet. Add one you want to repeat every day.</li>';
+ const ks=Object.keys(S.notes).sort().reverse().slice(0,5);
+ $("ntoday").textContent=S.notes[t]?"today saved":"nothing saved today";
+ $("notes").innerHTML=ks.length?ks.map(k=>`<li class="note"><span><small>${esc(new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}))}</small>${esc(S.notes[k])}</span></li>`).join(""):'<li class="empty">Write one good thing from today before you sleep.</li>';
+}
+const _r=render;render=function(){_r();extra()};
+document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
+ if(d.hd!==undefined){const x=S.habits[+d.hd],t=today(),j=x.days.indexOf(t);j>=0?x.days.splice(j,1):x.days.push(t)}
+ else if(d.hx!==undefined)S.habits.splice(+d.hx,1);
+ else return;
+ save();render()});
+$("hform").onsubmit=e=>{e.preventDefault();S.habits.push({x:$("hin").value.trim(),days:[]});$("hin").value="";save();render()};
+$("nform").onsubmit=e=>{e.preventDefault();S.notes[today()]=$("nin").value.trim();$("nin").value="";save();render()};
+const EM=["😞","😕","😐","🙂","😄"];
+const lastN=n=>{const a=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(key(d))}return a};
+function extra2(){
+ const t=today(),w=lastN(7);
+ $("moodbtns").innerHTML=EM.map((e,i)=>`<button class="tick ${S.moods[t]===i+1?"on":""}" data-m="${i+1}" aria-label="Mood ${i+1} of 5">${e}</button>`).join("");
+ $("moodchart").innerHTML=w.map(k=>{const v=S.moods[k]||0;return `<div style="flex:1;text-align:center;font-size:.75rem;color:var(--mute)"><div style="height:60px;display:flex;align-items:flex-end"><i style="display:block;width:100%;height:${v*20}%;background:var(--b);border-radius:4px 4px 0 0"></i></div>${new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"narrow"})}</div>`}).join("");
+ const hs=S.habits.reduce((a,x)=>a+w.filter(k=>x.days.includes(k)).length,0);
+ const sp=S.tx.filter(x=>x.t==="exp"&&x.d&&w.includes(x.d)).reduce((a,x)=>a+x.a,0);
+ const ms=w.map(k=>S.moods[k]).filter(Boolean);
+ const nn=w.filter(k=>S.notes[k]).length;
+ const td=S.tasks.filter(x=>x.d).length;
+ $("review").innerHTML=[["Habit check-ins",hs+" of "+S.habits.length*7],["Spent this week",fmt(sp)],["Average mood",ms.length?(ms.reduce((a,b)=>a+b,0)/ms.length).toFixed(1)+" / 5":"no entries"],["Gratitude notes",nn+" of 7 days"],["Tasks done",td+" of "+S.tasks.length],["Average sleep",(()=>{const s=w.map(k=>S.sleep[k]).filter(Boolean);return s.length?(s.reduce((a,b)=>a+b,0)/s.length).toFixed(1)+" h":"no entries"})()],["Glasses of water",w.reduce((a,k)=>a+(S.water[k]||0),0)+" total"]].map(([a,b])=>`<li><span>${a}</span><b>${b}</b></li>`).join("");
+}
+const _r2=render;render=function(){_r2();extra2()};
+document.addEventListener("click",e=>{const m=e.target.closest("[data-m]");if(!m)return;S.moods[today()]=+m.dataset.m;save();render()});
+$("dl").onclick=()=>{const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="dashboard-backup-"+today()+".json";document.body.appendChild(a);a.click();a.remove();setCloud("Backup file downloaded")};
+$("rs").onclick=()=>$("rf").click();
+$("rf").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(typeof d!=="object"||!Array.isArray(d.tasks))throw 0;S=Object.assign(DEF(),d);$("name").value=S.name;save();render();setCloud("Restored from file")}catch(x){setCloud("That file is not a dashboard backup")}};r.readAsText(f)};
+const PR=["What made you smile today?","What did you finish today?","Who helped you recently?","What are you proud of this week?","What went better than expected?","What small thing felt good today?","What are you looking forward to?"];
+function extra3(){
+ const t=today(),n=S.water[t]||0,rd=S.rdone[t]||[];
+ if(document.activeElement!==$("cur"))$("cur").value=S.cur;
+ $("nin").placeholder=PR[new Date().getDay()];
+ $("glasses").innerHTML=Array.from({length:8},(_,i)=>`<button class="tick ${i<n?"on":""}" data-w="${i}" aria-label="Glass ${i+1}">💧</button>`).join("");
+ $("wcount").textContent=n+" of 8 glasses";
+ $("routine").innerHTML=S.routine.map((x,i)=>`<li><input type="checkbox" data-r="${i}" ${rd.includes(i)?"checked":""} aria-label="${esc(x)}"><span>${esc(x)}</span></li>`).join("");
+ const sl=lastN(7).map(k=>S.sleep[k]).filter(Boolean),sv=S.sleep[t];
+ $("sleepinfo").textContent=(sv?"Logged today: "+sv.toFixed(1)+" h. ":"")+(sl.length?"7-day average: "+(sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(1)+" h":"No sleep logged yet.");
+ $("ideas").innerHTML=S.ideas.length?S.ideas.map((x,i)=>`<li><span>${esc(x)}</span><button class="ghost" data-ix="${i}" aria-label="Delete idea">✕</button></li>`).join(""):'<li class="empty">Empty your head here. Add a thought or idea.</li>';
+}
+const _r3=render;render=function(){_r3();extra3()};
+document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
+ if(d.w!==undefined){const i=+d.w+1,t=today();S.water[t]=S.water[t]===i?i-1:i}
+ else if(d.ix!==undefined)S.ideas.splice(+d.ix,1);
+ else return;save();render()});
+$("routine").addEventListener("change",e=>{const i=e.target.dataset.r;if(i===undefined)return;const t=today(),a=S.rdone[t]||(S.rdone[t]=[]),j=a.indexOf(+i);j>=0?a.splice(j,1):a.push(+i);save();render()});
+$("sform").onsubmit=e=>{e.preventDefault();const b=$("sbed").value,w=$("swake").value;if(!b||!w)return;let h=((+w.slice(0,2))*60+(+w.slice(3))-(+b.slice(0,2))*60-(+b.slice(3)))/60;if(h<=0)h+=24;S.sleep[today()]=h;save();render()};
+$("iform").onsubmit=e=>{e.preventDefault();S.ideas.unshift($("iin").value.trim());$("iin").value="";save();render()};
+$("cur").oninput=e=>{S.cur=e.target.value.trim();save();render()};
+function show(v){["dash","today","week","month","year","years"].forEach(x=>{$("v"+x).hidden=x!==v;document.querySelector(`[data-v="${x}"]`).classList.toggle("on",x===v)})}
+document.addEventListener("click",e=>{const v=e.target.dataset&&e.target.dataset.v;if(v&&["dash","today","week","month","year","years"].includes(v))show(v)});
+function extra4(){
+ const t=today(),rd=S.rdone[t]||[],w=lastN(7);
+ const od=S.tasks.filter(x=>!x.d&&x.u&&x.u<t),dt=S.tasks.filter(x=>!x.d&&(!x.u||x.u===t)),up=S.tasks.filter(x=>!x.d&&x.u&&x.u>t);
+ const tk=a=>a.map(x=>esc(x.x)+(x.u?` <small>(${x.u})</small>`:""));
+ const L=(h,a)=>`<section><h2>${h}</h2>`+(a.length?`<ul>${a.map(x=>`<li><span>${x}</span></li>`).join("")}</ul>`:'<p class="empty">Nothing here.</p>')+"</section>";
+ const sp=k=>fmt(S.tx.filter(x=>x.t==="exp"&&x.d===k).reduce((a,x)=>a+x.a,0));
+ $("vtoday").innerHTML=L("Overdue",tk(od))+L("To do today",tk(dt))+L("Habits left today",S.habits.filter(x=>!x.days.includes(t)).map(x=>esc(x.x)))+L("Bedtime routine left",S.routine.filter((_,i)=>!rd.includes(i)).map(esc))+L("Coming up",tk(up))+`<section><h2>Today so far</h2><ul><li><span>Water</span><b>${S.water[t]||0} of 8</b></li><li><span>Mood</span><b>${S.moods[t]?EM[S.moods[t]-1]:"not set"}</b></li><li><span>Spent</span><b>${sp(t)}</b></li><li><span>Gratitude note</span><b>${S.notes[t]?"saved":"not yet"}</b></li></ul></section>`;
+ $("vweek").innerHTML=`<section class="wide"><h2>Day by day</h2><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:var(--mute)"><th>Day</th><th>Mood</th><th>Sleep</th><th>Water</th><th>Habits</th><th>Spent</th></tr>`+w.map(k=>`<tr style="border-top:1px solid var(--line)"><td>${new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric"})}</td><td>${S.moods[k]?EM[S.moods[k]-1]:"–"}</td><td>${S.sleep[k]?S.sleep[k].toFixed(1)+" h":"–"}</td><td>${S.water[k]||0}</td><td>${S.habits.filter(x=>x.days.includes(k)).length}/${S.habits.length}</td><td>${sp(k)}</td></tr>`).join("")+`</table></div></section><section class="wide"><h2>Totals</h2><ul>${$("review").innerHTML}</ul></section>`;
+}
+function agg(p){
+ const pick=o=>Object.entries(o).filter(([k])=>k.startsWith(p)).map(e=>e[1]);
+ const avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1):"–";
+ const tx=S.tx.filter(x=>x.d&&x.d.startsWith(p)),sm=t=>fmt(tx.filter(x=>x.t===t).reduce((a,x)=>a+x.a,0));
+ const sl=pick(S.sleep);
+ return{mood:avg(pick(S.moods)),sleep:sl.length?avg(sl)+" h":"–",water:pick(S.water).reduce((a,b)=>a+b,0),habits:S.habits.reduce((a,h)=>a+h.days.filter(k=>k.startsWith(p)).length,0),notes:Object.keys(S.notes).filter(k=>k.startsWith(p)).length,spent:sm("exp"),inc:sm("inc")};
+}
+const AH='<tr style="text-align:left;color:var(--mute)"><th>Period</th><th>Mood</th><th>Sleep</th><th>Water</th><th>Habits</th><th>Notes</th><th>Spent</th><th>Income</th></tr>';
+const AR=(l,p)=>{const a=agg(p);return `<tr style="border-top:1px solid var(--line)"><td>${l}</td><td>${a.mood}</td><td>${a.sleep}</td><td>${a.water}</td><td>${a.habits}</td><td>${a.notes}</td><td>${a.spent}</td><td>${a.inc}</td></tr>`};
+const AT=(h,r)=>`<section class="wide"><h2>${h}</h2><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">${AH}${r}</table></div></section>`;
+const P2=n=>String(n).padStart(2,"0");
+function extra5(){
+ const t=today(),y=t.slice(0,4),ym=t.slice(0,7);
+ let mr="",yr="";
+ for(let d=1;d<=new Date().getDate();d++)mr+=AR(d,ym+"-"+P2(d));
+ for(let m=1;m<=12;m++)yr+=AR(new Date(2000,m-1,1).toLocaleDateString(undefined,{month:"short"}),y+"-"+P2(m));
+ $("vmonth").innerHTML=AT(new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"}),AR("Total",ym))+AT("Day by day",mr);
+ $("vyear").innerHTML=AT(y,AR("Total",y))+AT("Month by month",yr);
+ const ys=new Set([y]);[S.moods,S.sleep,S.water,S.notes].forEach(o=>Object.keys(o).forEach(k=>ys.add(k.slice(0,4))));S.habits.forEach(h=>h.days.forEach(k=>ys.add(k.slice(0,4))));S.tx.forEach(x=>x.d&&ys.add(x.d.slice(0,4)));
+ $("vyears").innerHTML=AT("Year by year",[...ys].sort().reverse().map(a=>AR(a,a)).join("")+AR("All time",""));
+}
+const _r4=render;render=function(){_r4();extra4();extra5()};
+render();show("dash");
+setCloud("Saved on this device. Use Download my data to keep a backup.");
+</script>
+</body>
+</html>
