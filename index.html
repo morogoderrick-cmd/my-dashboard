@@ -69,11 +69,25 @@ td,th{padding:7px 8px}
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
-<main>
+<div id="auth" style="max-width:380px;margin:12vh auto 0;padding:0 16px">
+<h1 style="font-size:2.2rem">My Dashboard</h1>
+<p style="color:var(--mute)">Log in to open your private dashboard. Your data is saved to your own account.</p>
+<section>
+<form id="aform" style="flex-direction:column;margin:0">
+<input id="aemail" type="email" placeholder="Email" autocomplete="email" required aria-label="Email" style="flex:none">
+<input id="apass" type="password" placeholder="Password (at least 8 characters)" autocomplete="current-password" minlength="8" required aria-label="Password" style="flex:none">
+<button class="btn" type="submit">Log in</button>
+<button class="tick" id="asign" type="button">Create account</button>
+</form>
+<p id="amsg" role="status" style="color:var(--mute);margin:10px 0 0"></p>
+</section>
+</div>
+<main id="app" hidden>
 <header>
 <h1><span id="hello">Good evening</span>, <input id="name" value="friend" aria-label="Your name" maxlength="16"></h1>
 <p id="date"></p>
 <p id="cloud" style="font-size:.85rem;margin:2px 0 0"></p>
+<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button>
 </header>
 <nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button></nav>
 <div class="grid" id="vdash">
@@ -152,9 +166,10 @@ td,th{padding:7px 8px}
 const $=id=>document.getElementById(id);
 const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
 let S=DEF();
-try{const r=localStorage.getItem("dash1");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
-let ref=null,tm;
-const save=()=>{try{localStorage.setItem("dash1",JSON.stringify(S))}catch(e){}if(ref){clearTimeout(tm);tm=setTimeout(()=>{ref.set({json:JSON.stringify(S)}).then(()=>setCloud("Backed up to your account")).catch(()=>setCloud("Backup failed, saved on this device only"))},600)}};
+let uid=null,ready=false,tm;
+const api=async(m,u,b)=>{const r=await fetch(u,{method:m,headers:b?{"Content-Type":"application/json"}:{},body:b?JSON.stringify(b):undefined,credentials:"same-origin"});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j};
+const save=()=>{if(!uid||!ready)return;clearTimeout(tm);tm=setTimeout(push,700)};
+async function push(){setCloud("Saving\u2026");try{await api("PUT","/api/data",{data:S});setCloud("Saved to your account")}catch(e){setCloud("Could not save online: "+e.message)}}
 function setCloud(t){const c=$("cloud");if(c)c.textContent=t}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=n=>(S.cur?S.cur+" ":"")+n.toLocaleString(undefined,{maximumFractionDigits:2});
@@ -280,7 +295,21 @@ function extra5(){
 }
 const _r4=render;render=function(){_r4();extra4();extra5()};
 render();show("dash");
-setCloud("Saved on this device. Use Download my data to keep a backup.");
+const amsg=t=>{$("amsg").textContent=t};
+const creds=()=>({email:$("aemail").value.trim(),password:$("apass").value});
+async function start(u){
+ uid=u.id;$("auth").hidden=true;$("app").hidden=false;setCloud("Loading your data\u2026");
+ let d;try{d=await api("GET","/api/data")}catch(e){setCloud("Could not load your data. Refresh the page.");return}
+ if(d.data)S=Object.assign(DEF(),d.data);
+ else{try{const r=localStorage.getItem("dash1");if(r)S=Object.assign(DEF(),JSON.parse(r))}catch(e){}ready=true;await push()}
+ ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
+ if(d.data)setCloud("Saved to your account");
+}
+$("aform").onsubmit=async e=>{e.preventDefault();amsg("Logging in\u2026");try{start((await api("POST","/api/login",creds())).user)}catch(x){amsg(x.message)}};
+$("asign").onclick=async()=>{const c=creds();if(!c.email||c.password.length<8){amsg("Enter your email and a password of at least 8 characters.");return}amsg("Creating account\u2026");try{start((await api("POST","/api/signup",c)).user)}catch(x){amsg(x.message)}};
+$("logout").onclick=async()=>{uid=null;ready=false;try{await api("POST","/api/logout")}catch(e){}location.reload()};
+$("chpw").onclick=async()=>{const o=prompt("Type your current password");if(!o)return;const n=prompt("Type your new password (at least 8 characters)");if(!n)return;try{await api("POST","/api/change-password",{oldPassword:o,newPassword:n});alert("Password changed.")}catch(x){alert(x.message)}};
+(async()=>{try{start((await api("GET","/api/me")).user)}catch(e){}})();
 </script>
 </body>
 </html>
