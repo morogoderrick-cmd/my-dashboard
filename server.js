@@ -12,6 +12,8 @@ if (!DATABASE_URL || !JWT_SECRET) {
 const noSsl = process.env.PGSSL === "off" || /localhost|127\.0\.0\.1/.test(DATABASE_URL);
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: noSsl ? false : { rejectUnauthorized: false } });
 
+pool.on("error", (e) => console.error("Database connection error:", e.message));
+
 const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "1mb" }));
