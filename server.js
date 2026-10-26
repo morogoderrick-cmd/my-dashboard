@@ -52,20 +52,25 @@ setInterval(() => tries.clear(), 36e5).unref();
 
 const cleanEmail = (e) => String(e || "").trim().toLowerCase();
 const okEmail = (e) => e.length <= 254 && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
+const okName = (n) => /^[A-Za-z0-9_.-]{3,20}$/.test(n);
+const NAME_MSG = "Username must be 3 to 20 letters, numbers, dots, dashes or underscores.";
 const okPass = (p) => typeof p === "string" && p.length >= 8 && p.length <= 200;
 
 app.get("/health", (q, s) => s.send("ok"));
 
 app.post("/api/signup", wrap(async (q, s) => {
-  const email = cleanEmail(q.body.email), pw = q.body.password;
+  const email = cleanEmail(q.body.email), pw = q.body.password, uname = String(q.body.username || "").trim();
   if (tooMany("s" + q.ip)) return s.status(429).json({ error: "Too many attempts. Try again in a few minutes." });
   if (!okEmail(email)) return s.status(400).json({ error: "Enter a valid email." });
+  if (!okName(uname)) return s.status(400).json({ error: NAME_MSG });
   if (!okPass(pw)) return s.status(400).json({ error: "Password must be at least 8 characters." });
+  if ((await pool.query("select 1 from users where lower(username)=lower($1)", [uname])).rows.length)
+    return s.status(409).json({ error: "That username is taken. Try another." });
   try {
-    const r = await pool.query("insert into users(email,pass_hash) values($1,$2) returning id,email", [email, await bcrypt.hash(pw, 10)]);
+    const r = await pool.query("insert into users(email,username,pass_hash) values($1,$2,$3) returning id,email,username", [email, uname, await bcrypt.hash(pw, 10)]);
     give(s, r.rows[0]); s.json({ user: r.rows[0] });
   } catch (e) {
-    if (e.code === "23505") return s.status(409).json({ error: "That email already has an account. Log in instead." });
+    if (e.code === "23505") return s.status(409).json({ error: /username/.test(e.constraint || e.detail || "") ? "That username is taken. Try another." : "That email already has an account. Log in instead." });
     throw e;
   }
 }));
@@ -73,17 +78,17 @@ app.post("/api/signup", wrap(async (q, s) => {
 app.post("/api/login", wrap(async (q, s) => {
   const email = cleanEmail(q.body.email);
   if (tooMany("l" + q.ip + email)) return s.status(429).json({ error: "Too many attempts. Try again in a few minutes." });
-  const r = await pool.query("select id,email,pass_hash from users where email=$1", [email]);
+  const r = await pool.query("select id,email,username,pass_hash from users where email=$1 or lower(username)=$1", [email]);
   const u = r.rows[0];
   const ok = await bcrypt.compare(String(q.body.password || ""), u ? u.pass_hash : DUMMY);
   if (!u || !ok) return s.status(401).json({ error: "Wrong email or password." });
-  give(s, u); s.json({ user: { id: u.id, email: u.email } });
+  give(s, u); s.json({ user: { id: u.id, email: u.email, username: u.username } });
 }));
 
 app.post("/api/logout", (q, s) => { s.clearCookie(COOKIE); s.json({ ok: true }); });
 
 app.get("/api/me", auth, wrap(async (q, s) => {
-  const r = await pool.query("select id,email from users where id=$1", [q.uid]);
+  const r = await pool.query("select id,email,username from users where id=$1", [q.uid]);
   if (!r.rows[0]) return s.status(401).json({ error: "Please log in" });
   s.json({ user: r.rows[0] });
 }));
@@ -103,6 +108,26 @@ app.put("/api/data", auth, wrap(async (q, s) => {
   s.json({ ok: true });
 }));
 
+app.post("/api/username", auth, wrap(async (q, s) => {
+  const n = String(q.body.username || "").trim();
+  if (!okName(n)) return s.status(400).json({ error: NAME_MSG });
+  try {
+    const r = await pool.query("update users set username=$1 where id=$2 returning id,email,username", [n, q.uid]);
+    s.json({ user: r.rows[0] });
+  } catch (e) {
+    if (e.code === "23505") return s.status(409).json({ error: "That username is taken. Try another." });
+    throw e;
+  }
+}));
+
+app.post("/api/delete-account", auth, wrap(async (q, s) => {
+  const r = await pool.query("select pass_hash from users where id=$1", [q.uid]);
+  if (!r.rows[0] || !(await bcrypt.compare(String(q.body.password || ""), r.rows[0].pass_hash)))
+    return s.status(401).json({ error: "Password is wrong." });
+  await pool.query("delete from users where id=$1", [q.uid]);
+  s.clearCookie(COOKIE); s.json({ ok: true });
+}));
+
 app.post("/api/change-password", auth, wrap(async (q, s) => {
   const { oldPassword, newPassword } = q.body;
   if (!okPass(newPassword)) return s.status(400).json({ error: "New password must be at least 8 characters." });
@@ -118,6 +143,8 @@ app.use(express.static(path.join(__dirname, "public")));
 (async () => {
   await pool.query(`create table if not exists users(
     id serial primary key, email text unique not null, pass_hash text not null, created_at timestamptz default now())`);
+  await pool.query("alter table users add column if not exists username text");
+  await pool.query("create unique index if not exists users_username_key on users (lower(username))");
   await pool.query(`create table if not exists dashboards(
     user_id int primary key references users(id) on delete cascade, data jsonb not null, updated_at timestamptz default now())`);
   app.listen(process.env.PORT || 3000, () => console.log("Dashboard running"));
