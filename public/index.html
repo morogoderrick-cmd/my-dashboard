@@ -65,10 +65,25 @@ input[type=checkbox]{flex:none;width:20px;height:20px;accent-color:var(--a)}
 .note small{display:block;color:var(--mute)}
 [hidden]{display:none!important}
 td,th{padding:7px 8px}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+#auth{animation:rise .5s ease both}
+#auth form:not([hidden]){animation:pop .3s ease both}
+#auth section.shake{animation:shake .45s}
+#amsg:not(:empty){animation:pop .3s ease both}
+.btn,.tick{transition:transform .15s,opacity .15s,background .2s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:scale(.98)}
+.btn.busy{pointer-events:none;opacity:.85}
+.btn.busy::after{content:"";display:inline-block;width:14px;height:14px;margin-left:8px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;vertical-align:-2px;animation:spin .7s linear infinite}
+@media(prefers-reduced-motion:reduce){*,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
+<div id="welcome" hidden style="position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;text-align:center;padding:24px"></div>
 <div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.</span><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
 <div id="auth" style="max-width:380px;margin:10vh auto 0;padding:0 16px">
 <h1 style="font-size:2.2rem">My Dashboard</h1>
@@ -323,8 +338,9 @@ $("rform").onsubmit=e=>{e.preventDefault();S.reminder={time:$("rtime").value,on:
 $("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),d=new Date(),ds=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate());
  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Dashboard//EN","BEGIN:VEVENT","UID:dashboard-daily-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M","RRULE:FREQ=DAILY","SUMMARY:Log in to My Dashboard","DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to My Dashboard","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"}));a.download="dashboard-reminder.ics";document.body.appendChild(a);a.click();a.remove()};
+function welcome(u,isNew){const w=$("welcome");w.textContent=(isNew?"Welcome, ":"Welcome back, ")+(u.username||"friend");w.style.transition="";w.style.opacity=1;w.style.animation="pop .5s ease both";w.hidden=false;setTimeout(()=>{w.style.transition="opacity .5s";w.style.opacity=0;setTimeout(()=>{w.hidden=true},500)},1300)}
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
-async function start(u){
+async function start(u,fresh){
  if(!u.username)u=await needName(u);
  uid=u.id;$("auth").hidden=true;$("app").hidden=false;setCloud("Loading your data\u2026");
  let d;try{d=await api("GET","/api/data")}catch(e){setCloud("Could not load your data. Refresh the page.");return}
@@ -334,18 +350,21 @@ async function start(u){
  $("who").innerHTML='<span style="color:#2e9e5b">\u25CF</span> Signed in as <b>'+esc(u.username||u.email)+"</b>";
  ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
  if(d.data)setCloud("Saved to your account");
+ if(fresh)welcome(u,fresh==="new");
 }
 const mode=m=>{$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
 mode("login");
 $("tosignup").onclick=()=>mode("signup");$("tologin").onclick=()=>mode("login");
 $("showl").onchange=e=>{$("lpass").type=e.target.checked?"text":"password"};
 $("shows").onchange=e=>{const t=e.target.checked?"text":"password";$("spass").type=t;$("spass2").type=t};
-$("loginform").onsubmit=async e=>{e.preventDefault();amsg("Logging in\u2026");try{start((await api("POST","/api/login",{email:$("lid").value.trim(),password:$("lpass").value})).user)}catch(x){amsg(x.message)}};
-$("signupform").onsubmit=async e=>{e.preventDefault();const email=$("semail").value.trim(),username=$("sname").value.trim(),password=$("spass").value;
- if(!/^[A-Za-z0-9_.-]{3,20}$/.test(username)){amsg("Username must be 3 to 20 letters, numbers, dots, dashes or underscores.");return}
- if(password.length<8){amsg("Password must be at least 8 characters.");return}
- if(password!==$("spass2").value){amsg("The two passwords do not match.");return}
- amsg("Creating account\u2026");try{start((await api("POST","/api/signup",{email,username,password})).user)}catch(x){amsg(x.message)}};
+function fail(m){amsg(m);const c=document.querySelector("#auth section");c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake")}
+const busy=(f,on)=>f.querySelector(".btn").classList.toggle("busy",on);
+$("loginform").onsubmit=async e=>{e.preventDefault();const f=e.target;amsg("");busy(f,1);try{await start((await api("POST","/api/login",{email:$("lid").value.trim(),password:$("lpass").value})).user,"back")}catch(x){fail(x.message)}busy(f,0)};
+$("signupform").onsubmit=async e=>{e.preventDefault();const f=e.target,email=$("semail").value.trim(),username=$("sname").value.trim(),password=$("spass").value;
+ if(!/^[A-Za-z0-9_.-]{3,20}$/.test(username))return fail("Username must be 3 to 20 letters, numbers, dots, dashes or underscores.");
+ if(password.length<8)return fail("Password must be at least 8 characters.");
+ if(password!==$("spass2").value)return fail("The two passwords do not match.");
+ amsg("");busy(f,1);try{await start((await api("POST","/api/signup",{email,username,password})).user,"new")}catch(x){fail(x.message)}busy(f,0)};
 $("delacc").onclick=async()=>{const p=prompt("This permanently deletes your account and all your data. Type your password to confirm.");if(!p)return;try{await api("POST","/api/delete-account",{password:p});alert("Account deleted.");location.reload()}catch(x){alert(x.message)}};
 $("logout").onclick=async()=>{uid=null;ready=false;try{await api("POST","/api/logout")}catch(e){}location.reload()};
 $("chpw").onclick=async()=>{const o=prompt("Type your current password");if(!o)return;const n=prompt("Type your new password (at least 8 characters)");if(!n)return;try{await api("POST","/api/change-password",{oldPassword:o,newPassword:n});alert("Password changed.")}catch(x){alert(x.message)}};
@@ -353,3 +372,7 @@ $("chpw").onclick=async()=>{const o=prompt("Type your current password");if(!o)r
 </script>
 </body>
 </html>
+
+
+
+
