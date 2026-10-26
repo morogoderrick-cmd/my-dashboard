@@ -74,8 +74,10 @@ td,th{padding:7px 8px}
 <p style="color:var(--mute)">Log in to open your private dashboard. Your data is saved to your own account.</p>
 <section>
 <form id="aform" style="flex-direction:column;margin:0">
-<input id="aemail" type="email" placeholder="Email" autocomplete="email" required aria-label="Email" style="flex:none">
+<input id="aemail" type="text" placeholder="Email or username" autocomplete="username" required aria-label="Email or username" style="flex:none">
+<input id="aname" type="text" placeholder="Choose a username (new accounts only)" autocomplete="nickname" maxlength="20" aria-label="Username for a new account" style="flex:none">
 <input id="apass" type="password" placeholder="Password (at least 8 characters)" autocomplete="current-password" minlength="8" required aria-label="Password" style="flex:none">
+<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="showpw" style="flex:none;width:auto;padding:0"> Show password</label>
 <button class="btn" type="submit">Log in</button>
 <button class="tick" id="asign" type="button">Create account</button>
 </form>
@@ -84,10 +86,11 @@ td,th{padding:7px 8px}
 </div>
 <main id="app" hidden>
 <header>
+<p id="who" style="display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.85rem;margin:0 0 10px"></p>
 <h1><span id="hello">Good evening</span>, <input id="name" value="friend" aria-label="Your name" maxlength="16"></h1>
 <p id="date"></p>
 <p id="cloud" style="font-size:.85rem;margin:2px 0 0"></p>
-<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button>
+<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button> <button class="ghost" id="delacc" style="padding:0;margin-top:4px;margin-left:12px">Delete account</button>
 </header>
 <nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button></nav>
 <div class="grid" id="vdash">
@@ -297,16 +300,22 @@ const _r4=render;render=function(){_r4();extra4();extra5()};
 render();show("dash");
 const amsg=t=>{$("amsg").textContent=t};
 const creds=()=>({email:$("aemail").value.trim(),password:$("apass").value});
+async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u){
+ if(!u.username)u=await needName(u);
  uid=u.id;$("auth").hidden=true;$("app").hidden=false;setCloud("Loading your data\u2026");
  let d;try{d=await api("GET","/api/data")}catch(e){setCloud("Could not load your data. Refresh the page.");return}
  if(d.data)S=Object.assign(DEF(),d.data);
  else{try{const r=localStorage.getItem("dash1");if(r)S=Object.assign(DEF(),JSON.parse(r))}catch(e){}ready=true;await push()}
+ if(u.username&&S.name==="friend")S.name=u.username;
+ $("who").innerHTML='<span style="color:#2e9e5b">\u25CF</span> Signed in as <b>'+esc(u.username||u.email)+"</b>";
  ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
  if(d.data)setCloud("Saved to your account");
 }
 $("aform").onsubmit=async e=>{e.preventDefault();amsg("Logging in\u2026");try{start((await api("POST","/api/login",creds())).user)}catch(x){amsg(x.message)}};
-$("asign").onclick=async()=>{const c=creds();if(!c.email||c.password.length<8){amsg("Enter your email and a password of at least 8 characters.");return}amsg("Creating account\u2026");try{start((await api("POST","/api/signup",c)).user)}catch(x){amsg(x.message)}};
+$("asign").onclick=async()=>{const c=creds();c.username=$("aname").value.trim();if(!c.email.includes("@")||!c.username||c.password.length<8){amsg("To create an account, enter your email, a username, and a password of at least 8 characters.");return}amsg("Creating account\u2026");try{start((await api("POST","/api/signup",c)).user)}catch(x){amsg(x.message)}};
+$("showpw").onchange=e=>{$("apass").type=e.target.checked?"text":"password"};
+$("delacc").onclick=async()=>{const p=prompt("This permanently deletes your account and all your data. Type your password to confirm.");if(!p)return;try{await api("POST","/api/delete-account",{password:p});alert("Account deleted.");location.reload()}catch(x){alert(x.message)}};
 $("logout").onclick=async()=>{uid=null;ready=false;try{await api("POST","/api/logout")}catch(e){}location.reload()};
 $("chpw").onclick=async()=>{const o=prompt("Type your current password");if(!o)return;const n=prompt("Type your new password (at least 8 characters)");if(!n)return;try{await api("POST","/api/change-password",{oldPassword:o,newPassword:n});alert("Password changed.")}catch(x){alert(x.message)}};
 (async()=>{try{start((await api("GET","/api/me")).user)}catch(e){}})();
