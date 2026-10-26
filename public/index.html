@@ -69,6 +69,7 @@ td,th{padding:7px 8px}
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
+<div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.</span><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
 <div id="auth" style="max-width:380px;margin:10vh auto 0;padding:0 16px">
 <h1 style="font-size:2.2rem">My Dashboard</h1>
 <p id="atext" style="color:var(--mute)"></p>
@@ -150,6 +151,11 @@ td,th{padding:7px 8px}
 <form id="iform"><input id="iin" placeholder="Get it out of your head" aria-label="New idea" required><button class="btn">Add</button></form>
 </section>
 <section class="wide">
+<h2>Daily reminder <small id="rstate"></small></h2>
+<form id="rform" style="margin:0;align-items:center"><label>Remind me at <input type="time" id="rtime" required style="width:auto;flex:none"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ron" style="flex:none;width:auto;padding:0"> Reminder on</label><button class="btn">Save</button><button class="tick" id="rics" type="button">Add to phone calendar</button></form>
+<p class="empty" style="margin:8px 0 0">Alerts appear only while this page is open in a browser. For a reminder that works when the page is closed, tap "Add to phone calendar" and open the downloaded file. It adds a daily alarm at your chosen time.</p>
+</section>
+<section class="wide">
 <h2>Budget <small>this month</small></h2>
 <div class="stats">
 <div>Income<strong id="inc">0</strong></div>
@@ -175,7 +181,7 @@ td,th{padding:7px 8px}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
+const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",reminder:{time:"20:00",on:false},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
 let S=DEF();
 let uid=null,ready=false,tm;
 const api=async(m,u,b)=>{const r=await fetch(u,{method:m,headers:b?{"Content-Type":"application/json"}:{},body:b?JSON.stringify(b):undefined,credentials:"same-origin"});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j};
@@ -307,6 +313,16 @@ function extra5(){
 const _r4=render;render=function(){_r4();extra4();extra5()};
 render();show("dash");
 const amsg=t=>{$("amsg").textContent=t};
+function fireReminder(){$("rbanner").hidden=false;try{if("Notification" in window&&Notification.permission==="granted")new Notification("My Dashboard",{body:"Time for your daily check-in. Log in and update your day."})}catch(e){}}
+function remindCheck(){const r=S.reminder;if(!r||!r.on||!uid)return;const n=new Date(),p=r.time.split(":"),diff=n.getHours()*60+n.getMinutes()-(+p[0]*60+ +p[1]);let last="";try{last=localStorage.getItem("lastRemind")}catch(e){}if(diff<0||diff>60||last===today())return;try{localStorage.setItem("lastRemind",today())}catch(e){}fireReminder()}
+let rt;
+function extra6(){if(document.activeElement!==$("rtime"))$("rtime").value=S.reminder.time;$("ron").checked=!!S.reminder.on;$("rstate").textContent=S.reminder.on?"on at "+S.reminder.time:"off";if(!rt)rt=setInterval(remindCheck,30000)}
+const _r6=render;render=function(){_r6();extra6()};
+$("rdone").onclick=()=>{$("rbanner").hidden=true};
+$("rform").onsubmit=e=>{e.preventDefault();S.reminder={time:$("rtime").value,on:$("ron").checked};if(S.reminder.on&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission();save();render()};
+$("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),d=new Date(),ds=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate());
+ const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Dashboard//EN","BEGIN:VEVENT","UID:dashboard-daily-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M","RRULE:FREQ=DAILY","SUMMARY:Log in to My Dashboard","DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to My Dashboard","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"}));a.download="dashboard-reminder.ics";document.body.appendChild(a);a.click();a.remove()};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u){
  if(!u.username)u=await needName(u);
