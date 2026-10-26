@@ -69,17 +69,25 @@ td,th{padding:7px 8px}
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
-<div id="auth" style="max-width:380px;margin:12vh auto 0;padding:0 16px">
+<div id="auth" style="max-width:380px;margin:10vh auto 0;padding:0 16px">
 <h1 style="font-size:2.2rem">My Dashboard</h1>
-<p style="color:var(--mute)">Log in to open your private dashboard. Your data is saved to your own account.</p>
+<p id="atext" style="color:var(--mute)"></p>
 <section>
-<form id="aform" style="flex-direction:column;margin:0">
-<input id="aemail" type="text" placeholder="Email or username" autocomplete="username" required aria-label="Email or username" style="flex:none">
-<input id="aname" type="text" placeholder="Choose a username (new accounts only)" autocomplete="nickname" maxlength="20" aria-label="Username for a new account" style="flex:none">
-<input id="apass" type="password" placeholder="Password (at least 8 characters)" autocomplete="current-password" minlength="8" required aria-label="Password" style="flex:none">
-<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="showpw" style="flex:none;width:auto;padding:0"> Show password</label>
+<form id="loginform" style="flex-direction:column;margin:0">
+<input id="lid" type="text" placeholder="Email or username" autocomplete="username" required aria-label="Email or username" style="flex:none">
+<input id="lpass" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password" style="flex:none">
+<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="showl" style="flex:none;width:auto;padding:0"> Show password</label>
 <button class="btn" type="submit">Log in</button>
-<button class="tick" id="asign" type="button">Create account</button>
+<button class="ghost" id="tosignup" type="button">New here? Create an account</button>
+</form>
+<form id="signupform" style="flex-direction:column;margin:0" hidden>
+<input id="semail" type="email" placeholder="Email" autocomplete="email" required aria-label="Email" style="flex:none">
+<input id="sname" type="text" placeholder="Choose a username (3 to 20 characters)" autocomplete="username" maxlength="20" required aria-label="Username" style="flex:none">
+<input id="spass" type="password" placeholder="Password (at least 8 characters)" autocomplete="new-password" minlength="8" required aria-label="Password" style="flex:none">
+<input id="spass2" type="password" placeholder="Repeat password" autocomplete="new-password" minlength="8" required aria-label="Repeat password" style="flex:none">
+<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="shows" style="flex:none;width:auto;padding:0"> Show passwords</label>
+<button class="btn" type="submit">Create account</button>
+<button class="ghost" id="tologin" type="button">Already have an account? Log in</button>
 </form>
 <p id="amsg" role="status" style="color:var(--mute);margin:10px 0 0"></p>
 </section>
@@ -299,7 +307,6 @@ function extra5(){
 const _r4=render;render=function(){_r4();extra4();extra5()};
 render();show("dash");
 const amsg=t=>{$("amsg").textContent=t};
-const creds=()=>({email:$("aemail").value.trim(),password:$("apass").value});
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u){
  if(!u.username)u=await needName(u);
@@ -312,9 +319,17 @@ async function start(u){
  ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
  if(d.data)setCloud("Saved to your account");
 }
-$("aform").onsubmit=async e=>{e.preventDefault();amsg("Logging in\u2026");try{start((await api("POST","/api/login",creds())).user)}catch(x){amsg(x.message)}};
-$("asign").onclick=async()=>{const c=creds();c.username=$("aname").value.trim();if(!c.email.includes("@")||!c.username||c.password.length<8){amsg("To create an account, enter your email, a username, and a password of at least 8 characters.");return}amsg("Creating account\u2026");try{start((await api("POST","/api/signup",c)).user)}catch(x){amsg(x.message)}};
-$("showpw").onchange=e=>{$("apass").type=e.target.checked?"text":"password"};
+const mode=m=>{$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
+mode("login");
+$("tosignup").onclick=()=>mode("signup");$("tologin").onclick=()=>mode("login");
+$("showl").onchange=e=>{$("lpass").type=e.target.checked?"text":"password"};
+$("shows").onchange=e=>{const t=e.target.checked?"text":"password";$("spass").type=t;$("spass2").type=t};
+$("loginform").onsubmit=async e=>{e.preventDefault();amsg("Logging in\u2026");try{start((await api("POST","/api/login",{email:$("lid").value.trim(),password:$("lpass").value})).user)}catch(x){amsg(x.message)}};
+$("signupform").onsubmit=async e=>{e.preventDefault();const email=$("semail").value.trim(),username=$("sname").value.trim(),password=$("spass").value;
+ if(!/^[A-Za-z0-9_.-]{3,20}$/.test(username)){amsg("Username must be 3 to 20 letters, numbers, dots, dashes or underscores.");return}
+ if(password.length<8){amsg("Password must be at least 8 characters.");return}
+ if(password!==$("spass2").value){amsg("The two passwords do not match.");return}
+ amsg("Creating account\u2026");try{start((await api("POST","/api/signup",{email,username,password})).user)}catch(x){amsg(x.message)}};
 $("delacc").onclick=async()=>{const p=prompt("This permanently deletes your account and all your data. Type your password to confirm.");if(!p)return;try{await api("POST","/api/delete-account",{password:p});alert("Account deleted.");location.reload()}catch(x){alert(x.message)}};
 $("logout").onclick=async()=>{uid=null;ready=false;try{await api("POST","/api/logout")}catch(e){}location.reload()};
 $("chpw").onclick=async()=>{const o=prompt("Type your current password");if(!o)return;const n=prompt("Type your new password (at least 8 characters)");if(!n)return;try{await api("POST","/api/change-password",{oldPassword:o,newPassword:n});alert("Password changed.")}catch(x){alert(x.message)}};
