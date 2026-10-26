@@ -91,6 +91,8 @@ td,th{padding:7px 8px}
 #auth h1{animation:rise .7s .1s ease both}
 #atext{animation:rise .7s .25s ease both}
 @media(prefers-reduced-motion:reduce){#auth{animation:pop .3s ease both}#auth h1,#atext{animation:none}#auth section.shake{animation:none}#abg i{animation:none}}
+.chip{display:flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:.88rem;cursor:pointer}
+.chip input{flex:none;width:auto;padding:0;margin:0}
 </style>
 </head>
 <body>
@@ -181,8 +183,8 @@ td,th{padding:7px 8px}
 <section class="wide">
 <h2>Daily reminder <small id="rstate"></small></h2>
 <p id="rcount" aria-live="off" style="font-size:1.5rem;font-weight:800;margin:0 0 10px;color:var(--a)"></p>
-<form id="rform" style="margin:0;align-items:center"><label>Remind me at <input type="time" id="rtime" required style="width:auto;flex:none"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ron" style="flex:none;width:auto;padding:0"> Reminder on</label><button class="btn">Save</button><button class="tick" id="rics" type="button">Add to phone calendar</button><button class="tick" id="rtest" type="button">Test ring</button></form>
-<p class="empty" style="margin:8px 0 0">The countdown and the ring (sound, banner, vibration, notification) work only while this page stays open in a browser tab. For a reminder that works when the page is closed, tap "Add to phone calendar" and open the downloaded file. It adds a daily alarm at your chosen time.</p>
+<form id="rform" style="margin:0;align-items:center"><label>Remind me at <input type="time" id="rtime" required style="width:auto;flex:none"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ron" style="flex:none;width:auto;padding:0"> Reminder on</label><div id="rdays" style="display:flex;gap:6px;flex-wrap:wrap;width:100%;order:5"><label class="chip"><input type="checkbox" data-d="1"> Mon</label><label class="chip"><input type="checkbox" data-d="2"> Tue</label><label class="chip"><input type="checkbox" data-d="3"> Wed</label><label class="chip"><input type="checkbox" data-d="4"> Thu</label><label class="chip"><input type="checkbox" data-d="5"> Fri</label><label class="chip"><input type="checkbox" data-d="6"> Sat</label><label class="chip"><input type="checkbox" data-d="0"> Sun</label><button class="ghost" id="rall" type="button">Every day</button><button class="ghost" id="rwk" type="button">Weekdays</button></div><button class="btn">Save</button><button class="tick" id="rics" type="button">Add to phone calendar</button><button class="tick" id="rtest" type="button">Test ring</button></form>
+<p class="empty" style="margin:8px 0 0">Set it once and it repeats on the days you tick, every week. The countdown and the ring (sound, banner, vibration, notification) work only while this page stays open in a browser tab. For a reminder that works when the page is closed, tap "Add to phone calendar" and open the downloaded file. It adds a daily alarm at your chosen time.</p>
 </section>
 <section class="wide">
 <h2>Budget <small>this month</small></h2>
@@ -210,7 +212,7 @@ td,th{padding:7px 8px}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",reminder:{time:"20:00",on:false},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
+const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6]},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
 let S=DEF();
 let uid=null,ready=false,tm;
 const api=async(m,u,b)=>{const r=await fetch(u,{method:m,headers:b?{"Content-Type":"application/json"}:{},body:b?JSON.stringify(b):undefined,credentials:"same-origin"});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j};
@@ -342,6 +344,7 @@ function extra5(){
 const _r4=render;render=function(){_r4();extra4();extra5()};
 render();show("dash");
 const amsg=t=>{$("amsg").textContent=t};
+const ALL=[0,1,2,3,4,5,6],DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 let ac=null,ringTimer=null,snoozeAt=0;const baseTitle=document.title;
 function unlock(){try{if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){}}
 document.addEventListener("click",unlock,{passive:true});
@@ -350,23 +353,26 @@ function stopRing(hide){clearInterval(ringTimer);ringTimer=null;document.title=b
 function ring(){unlock();$("rbanner").hidden=false;document.title="\u23F0 Check-in time!";const go=()=>{beep();try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}};go();clearInterval(ringTimer);let n=0;ringTimer=setInterval(()=>{if(++n>9)stopRing(false);else go()},3000);
  try{if("Notification" in window&&Notification.permission==="granted")new Notification("My Dashboard",{body:"Time for your daily check-in. Log in and update your day."})}catch(e){}}
 const hms=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h+"h "+P2(m)+"m "+P2(s%60)+"s"};
-function nextRing(){const p=S.reminder.time.split(":"),n=new Date(),t=new Date(n.getFullYear(),n.getMonth(),n.getDate(),+p[0],+p[1],0);if(t<=n)t.setDate(t.getDate()+1);return t}
+function nextRing(){const r=S.reminder,days=r.days&&r.days.length?r.days:ALL,p=r.time.split(":"),n=new Date();for(let i=0;i<8;i++){const t=new Date(n.getFullYear(),n.getMonth(),n.getDate()+i,+p[0],+p[1],0);if(t>n&&days.includes(t.getDay()))return t}return new Date(n.getTime()+864e5)}
 function tick(){if(!uid||!S.reminder)return;const r=S.reminder,el=$("rcount");
  if(!r.on){el.textContent="Reminder is off";return}
  const now=Date.now();
  if(snoozeAt){if(now>=snoozeAt){snoozeAt=0;ring()}else{el.textContent="Snoozed. Rings in "+hms(snoozeAt-now);return}}
- const n=new Date(),p=r.time.split(":"),diff=n.getHours()*60+n.getMinutes()-(+p[0]*60+ +p[1]);let last="";try{last=localStorage.getItem("lastRemind")}catch(e){}
- if(diff>=0&&diff<=60&&last!==today()&&!ringTimer){try{localStorage.setItem("lastRemind",today())}catch(e){}ring()}
- el.textContent=ringTimer?"\u23F0 Ringing now":"Rings in "+hms(nextRing()-now)+" (at "+r.time+")"}
+ const days=r.days&&r.days.length?r.days:ALL,n=new Date(),p=r.time.split(":"),diff=n.getHours()*60+n.getMinutes()-(+p[0]*60+ +p[1]);let last="";try{last=localStorage.getItem("lastRemind")}catch(e){}
+ if(days.includes(n.getDay())&&diff>=0&&diff<=60&&last!==today()&&!ringTimer){try{localStorage.setItem("lastRemind",today())}catch(e){}ring()}
+ el.textContent=ringTimer?"\u23F0 Ringing now":"Rings in "+hms(nextRing()-now)+" ("+DN[nextRing().getDay()]+" at "+r.time+")"}
 let rt;
-function extra6(){if(document.activeElement!==$("rtime"))$("rtime").value=S.reminder.time;$("ron").checked=!!S.reminder.on;$("rstate").textContent=S.reminder.on?"on at "+S.reminder.time:"off";if(!rt)rt=setInterval(tick,1000);tick()}
+function extra6(){if(document.activeElement!==$("rtime"))$("rtime").value=S.reminder.time;$("ron").checked=!!S.reminder.on;const dd=S.reminder.days&&S.reminder.days.length?S.reminder.days:ALL;document.querySelectorAll("#rdays input").forEach(c=>{if(document.activeElement!==c)c.checked=dd.includes(+c.dataset.d)});$("rstate").textContent=S.reminder.on?"on at "+S.reminder.time+", "+(dd.length===7?"every day":[1,2,3,4,5,6,0].filter(x=>dd.includes(x)).map(x=>DN[x]).join(" ")):"off";if(!rt)rt=setInterval(tick,1000);tick()}
 const _r6=render;render=function(){_r6();extra6()};
+const setDays=a=>document.querySelectorAll("#rdays input").forEach(c=>c.checked=a.includes(+c.dataset.d));
+$("rall").onclick=()=>setDays(ALL);$("rwk").onclick=()=>setDays([1,2,3,4,5]);
 $("rdone").onclick=()=>stopRing(true);
 $("rsnooze").onclick=()=>{stopRing(true);snoozeAt=Date.now()+10*60000;tick()};
 $("rtest").onclick=()=>{unlock();if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();ring()};
-$("rform").onsubmit=e=>{e.preventDefault();S.reminder={time:$("rtime").value,on:$("ron").checked};if(S.reminder.on&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission();snoozeAt=0;save();render()};
-$("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),d=new Date(),ds=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate());
- const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Dashboard//EN","BEGIN:VEVENT","UID:dashboard-daily-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M","RRULE:FREQ=DAILY","SUMMARY:Log in to My Dashboard","DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to My Dashboard","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
+$("rform").onsubmit=e=>{e.preventDefault();const pick=[...document.querySelectorAll("#rdays input:checked")].map(c=>+c.dataset.d);if(!pick.length){alert("Pick at least one day.");return}S.reminder={time:$("rtime").value,on:$("ron").checked,days:pick};if(S.reminder.on&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission();snoozeAt=0;save();render()};
+$("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),dl=[...document.querySelectorAll("#rdays input:checked")].map(c=>+c.dataset.d),D=dl.length?dl:ALL,BY=["SU","MO","TU","WE","TH","FR","SA"];let d=new Date();for(let i=0;i<7&&!D.includes(d.getDay());i++)d.setDate(d.getDate()+1);
+ const ds=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate()),rule=D.length===7?"RRULE:FREQ=DAILY":"RRULE:FREQ=WEEKLY;BYDAY="+D.map(x=>BY[x]).join(",");
+ const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Dashboard//EN","BEGIN:VEVENT","UID:dashboard-reminder-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M",rule,"SUMMARY:Log in to My Dashboard","DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to My Dashboard","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"}));a.download="dashboard-reminder.ics";document.body.appendChild(a);a.click();a.remove()};
 function welcome(u,isNew){const w=$("welcome");w.textContent=(isNew?"Welcome, ":"Welcome back, ")+(u.username||"friend");w.style.transition="";w.style.opacity=1;w.style.animation="pop .5s ease both";w.hidden=false;setTimeout(()=>{w.style.transition="opacity .5s";w.style.opacity=0;setTimeout(()=>{w.hidden=true},500)},1300)}
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
