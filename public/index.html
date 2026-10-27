@@ -93,12 +93,26 @@ td,th{padding:7px 8px}
 @media(prefers-reduced-motion:reduce){#auth{animation:pop .3s ease both}#auth h1,#atext{animation:none}#auth section.shake{animation:none}#abg i{animation:none}}
 .chip{display:flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:.88rem;cursor:pointer}
 .chip input{flex:none;width:auto;padding:0;margin:0}
+.ring{animation:ringin .9s ease both}
+@keyframes ringin{from{stroke-dashoffset:326.7}}
+@keyframes grow{from{transform:scaleY(0)}}
+.cbar{transform-box:fill-box;transform-origin:bottom;animation:grow .6s ease both}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .hd{text-align:center;color:var(--mute);font-size:.8rem}
+.day{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.8rem;padding:2px;transition:transform .15s}
+.day:hover{transform:scale(1.06)}
+.day span{font-size:1.1rem;line-height:1}
+.day small{font-size:.65rem;color:var(--mute)}
+.day.today{outline:2px solid var(--b)}
+.day.sel{outline:2px solid var(--a)}
+.chartnote{color:var(--mute);font-size:.85rem;margin:0 0 6px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
 <div id="welcome" hidden style="position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;text-align:center;padding:24px"></div>
+<div id="toast" hidden role="status" style="position:fixed;left:0;right:0;margin:auto;width:max-content;max-width:90vw;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:85;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600"></div>
 <div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.</span><button class="btn" id="rsnooze" style="background:transparent;color:#fff;border:2px solid #fff">Snooze 10 min</button><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
 <div id="abg" aria-hidden="true"><i></i><i></i><i></i></div>
 <div id="auth" style="max-width:380px;margin:10vh auto 0;padding:0 16px">
@@ -132,7 +146,7 @@ td,th{padding:7px 8px}
 <p id="cloud" style="font-size:.85rem;margin:2px 0 0"></p>
 <button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button> <button class="ghost" id="delacc" style="padding:0;margin-top:4px;margin-left:12px">Delete account</button>
 </header>
-<nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button></nav>
+<nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button><button class="tick" data-v="charts">Charts</button><button class="tick" data-v="cal">Calendar</button></nav>
 <div class="grid" id="vdash">
 <section>
 <h2>Top tasks <small id="tcount"></small></h2>
@@ -215,7 +229,9 @@ td,th{padding:7px 8px}
 <div class="grid" id="vmonth" hidden></div>
 <div class="grid" id="vyear" hidden></div>
 <div class="grid" id="vyears" hidden></div>
-<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
+<div class="grid" id="vcharts" hidden></div>
+<div class="grid" id="vcal" hidden></div>
+<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><label style="display:flex;gap:6px;align-items:center;color:var(--mute)"><input type="checkbox" id="conf" checked style="flex:none;width:auto;padding:0"> Celebrations</label><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -258,7 +274,7 @@ document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
  else if(d.gm!==undefined)S.goals[+d.gm].p=Math.max(0,S.goals[+d.gm].p-10);
  else return;
  save();render()});
-$("tasks").addEventListener("change",e=>{const i=e.target.dataset.t;if(i===undefined)return;S.tasks[+i].d=e.target.checked;save();render()});
+$("tasks").addEventListener("change",e=>{const i=e.target.dataset.t;if(i===undefined)return;S.tasks[+i].d=e.target.checked;S.tasks[+i].dd=e.target.checked?today():"";save();render()});
 $("tform").onsubmit=e=>{e.preventDefault();S.tasks.push({x:$("tin").value.trim(),d:false,u:$("tdue").value||($("ttime").value?today():""),m:$("ttime").value});$("tdue").value="";$("ttime").value="";$("tin").value="";save();render()};
 $("gform").onsubmit=e=>{e.preventDefault();S.goals.push({x:$("gin").value.trim(),p:0});$("gin").value="";save();render()};
 $("bform").onsubmit=e=>{e.preventDefault();const a=parseFloat($("bamt").value);if(!(a>0))return;S.tx.push({t:$("btype").value,c:$("btype").value==="inc"?"Income":$("bcat").value,a,d:today()});$("bamt").value="";save();render()};
@@ -319,15 +335,15 @@ $("routine").addEventListener("change",e=>{const i=e.target.dataset.r;if(i===und
 $("sform").onsubmit=e=>{e.preventDefault();const b=$("sbed").value,w=$("swake").value;if(!b||!w)return;let h=((+w.slice(0,2))*60+(+w.slice(3))-(+b.slice(0,2))*60-(+b.slice(3)))/60;if(h<=0)h+=24;S.sleep[today()]=h;save();render()};
 $("iform").onsubmit=e=>{e.preventDefault();S.ideas.unshift($("iin").value.trim());$("iin").value="";save();render()};
 $("cur").oninput=e=>{S.cur=e.target.value.trim();save();render()};
-function show(v){["dash","today","week","month","year","years"].forEach(x=>{$("v"+x).hidden=x!==v;document.querySelector(`[data-v="${x}"]`).classList.toggle("on",x===v)})}
-document.addEventListener("click",e=>{const v=e.target.dataset&&e.target.dataset.v;if(v&&["dash","today","week","month","year","years"].includes(v))show(v)});
+function show(v){["dash","today","week","month","year","years","charts","cal"].forEach(x=>{$("v"+x).hidden=x!==v;document.querySelector(`[data-v="${x}"]`).classList.toggle("on",x===v)})}
+document.addEventListener("click",e=>{const v=e.target.dataset&&e.target.dataset.v;if(v&&["dash","today","week","month","year","years","charts","cal"].includes(v))show(v)});
 function extra4(){
  const t=today(),rd=S.rdone[t]||[],w=lastN(7);
  const srt=(a,b)=>((a.u||"")+(a.m||"99")).localeCompare((b.u||"")+(b.m||"99")),od=S.tasks.filter(isLate).sort(srt),dt=S.tasks.filter(x=>!x.d&&!isLate(x)&&(!x.u||x.u===t)).sort(srt),up=S.tasks.filter(x=>!x.d&&x.u&&x.u>t).sort(srt);
  const tk=a=>a.map(x=>esc(x.x)+(x.u?` <small>(${dueTxt(x)})</small>`:""));
  const L=(h,a)=>`<section><h2>${h}</h2>`+(a.length?`<ul>${a.map(x=>`<li><span>${x}</span></li>`).join("")}</ul>`:'<p class="empty">Nothing here.</p>')+"</section>";
  const sp=k=>fmt(S.tx.filter(x=>x.t==="exp"&&x.d===k).reduce((a,x)=>a+x.a,0));
- $("vtoday").innerHTML=L("Overdue",tk(od))+L("To do today",tk(dt))+L("Habits left today",S.habits.filter(x=>!x.days.includes(t)).map(x=>esc(x.x)))+L("Bedtime routine left",S.routine.filter((_,i)=>!rd.includes(i)).map(esc))+L("Coming up",tk(up))+`<section><h2>Today so far</h2><ul><li><span>Water</span><b>${S.water[t]||0} of 8</b></li><li><span>Mood</span><b>${S.moods[t]?EM[S.moods[t]-1]:"not set"}</b></li><li><span>Spent</span><b>${sp(t)}</b></li><li><span>Gratitude note</span><b>${S.notes[t]?"saved":"not yet"}</b></li></ul></section>`;
+ $("vtoday").innerHTML=scoreHTML()+L("Overdue",tk(od))+L("To do today",tk(dt))+L("Habits left today",S.habits.filter(x=>!x.days.includes(t)).map(x=>esc(x.x)))+L("Bedtime routine left",S.routine.filter((_,i)=>!rd.includes(i)).map(esc))+L("Coming up",tk(up))+`<section><h2>Today so far</h2><ul><li><span>Water</span><b>${S.water[t]||0} of 8</b></li><li><span>Mood</span><b>${S.moods[t]?EM[S.moods[t]-1]:"not set"}</b></li><li><span>Spent</span><b>${sp(t)}</b></li><li><span>Gratitude note</span><b>${S.notes[t]?"saved":"not yet"}</b></li></ul></section>`;
  $("vweek").innerHTML=`<section class="wide"><h2>Day by day</h2><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:var(--mute)"><th>Day</th><th>Mood</th><th>Sleep</th><th>Water</th><th>Habits</th><th>Spent</th></tr>`+w.map(k=>`<tr style="border-top:1px solid var(--line)"><td>${new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric"})}</td><td>${S.moods[k]?EM[S.moods[k]-1]:"–"}</td><td>${S.sleep[k]?S.sleep[k].toFixed(1)+" h":"–"}</td><td>${S.water[k]||0}</td><td>${S.habits.filter(x=>x.days.includes(k)).length}/${S.habits.length}</td><td>${sp(k)}</td></tr>`).join("")+`</table></div></section><section class="wide"><h2>Totals</h2><ul>${$("review").innerHTML}</ul></section>`;
 }
 function agg(p){
@@ -417,6 +433,42 @@ $("dlr").onclick=()=>{const css="body{font:15px/1.5 system-ui,sans-serif;max-wid
  const tb=r=>"<table><tr>"+Object.keys(r[0]).map(k=>"<th>"+esc(k)+"</th>").join("")+"</tr>"+r.map(o=>"<tr>"+Object.values(o).map(v=>"<td>"+esc(v)+"</td>").join("")+"</tr>").join("")+"</table>";
  const html='<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Dashboard report</title><style>'+css+'</style></head><body><h1>My Dashboard report</h1><p>'+esc(S.name)+" \u00B7 exported "+esc(new Date().toLocaleString())+"</p>"+Object.entries(exportData(true)).map(([n,r])=>r.length?"<h2>"+esc(n)+"</h2>"+tb(r):"").join("")+'<p style="margin-top:28px;color:#5d6b78">Tip: press Ctrl+P and choose Save as PDF to make a PDF copy.</p></body></html>';
  saveFile("my-dashboard-report-"+today()+".html","text/html",html);setCloud("Report downloaded")};
+
+function dayScore(k){const t=k||today(),parts=[],rel=S.tasks.filter(x=>x.d?x.dd===t:(!x.u||x.u<=t));
+ if(rel.length){const n=rel.filter(x=>x.d).length;parts.push(["Tasks",n/rel.length,n+" of "+rel.length])}
+ if(S.habits.length){const n=S.habits.filter(h=>h.days.includes(t)).length;parts.push(["Habits",n/S.habits.length,n+" of "+S.habits.length])}
+ const w=S.water[t]||0;parts.push(["Water",Math.min(w/8,1),w+" of 8 glasses"]);
+ const rd=(S.rdone[t]||[]).length;if(S.routine.length)parts.push(["Bedtime routine",Math.min(rd/S.routine.length,1),rd+" of "+S.routine.length]);
+ parts.push(["Mood logged",S.moods[t]?1:0,S.moods[t]?"done":"not yet"]);parts.push(["Gratitude note",S.notes[t]?1:0,S.notes[t]?"done":"not yet"]);
+ return{pct:Math.round(parts.reduce((a,p)=>a+p[1],0)/parts.length*100),parts,rel}}
+function scoreHTML(){const s=dayScore(),c=326.7,off=c*(1-s.pct/100),msg=s.pct>=100?"Perfect day!":s.pct>=70?"Great going":s.pct>=40?"Keep it up":"A fresh start";
+ return `<section class="wide" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><svg width="130" height="130" viewBox="0 0 130 130" role="img" aria-label="Today's score ${s.pct} percent"><circle cx="65" cy="65" r="52" fill="none" stroke="var(--line)" stroke-width="12"/><circle class="ring" cx="65" cy="65" r="52" fill="none" stroke="var(--a)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${c}" style="stroke-dashoffset:${off}" transform="rotate(-90 65 65)"/><text x="65" y="72" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)">${s.pct}%</text></svg><div style="flex:1;min-width:200px"><h2 style="margin:0 0 6px">Today's score <small>${msg}</small></h2><ul>${s.parts.map(p=>`<li><span>${p[0]}</span><b>${p[2]}</b></li>`).join("")}</ul></div></section>`}
+let wins=null;
+function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;t.style.animation="none";void t.offsetWidth;t.style.animation="rise .4s ease both";clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true},3400)}
+function confetti(){const c=document.createElement("canvas");c.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:90";c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext("2d"),cols=["#1f7a8c","#d99a00","#e4572e","#7b61ff","#2e9e5b","#ff7aa2"],ps=Array.from({length:150},()=>({x:c.width/2+(Math.random()-.5)*140,y:c.height*.35,vx:(Math.random()-.5)*15,vy:-Math.random()*13-4,s:Math.random()*7+5,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:cols[Math.random()*6|0]}));let f=0;(function go(){x.clearRect(0,0,c.width,c.height);ps.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.globalAlpha=Math.max(0,1-f/150);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6);x.restore()});if(++f<150)requestAnimationFrame(go);else c.remove()})()}
+function celebrate(m){toast("🎉 "+m);confetti()}
+function checkWins(){const sc=dayScore(),tAll=sc.rel.length>0&&sc.rel.every(x=>x.d),g=new Set(S.goals.filter(x=>x.p>=100).map(x=>x.x)),now={tAll,p100:sc.pct>=100,g};
+ if(wins&&S.confetti!==false){if(now.p100&&!wins.p100)celebrate("Perfect day! 100%");else if(tAll&&!wins.tAll)celebrate("All tasks done!");else{const ng=[...g].find(x=>!wins.g.has(x));if(ng)celebrate("Goal reached: "+ng)}}
+ wins=now}
+let crange=14;
+function bars(vals,labs,color,max,unit){const n=vals.length,bw=n>45?7:n>20?14:26,w=Math.max(n*bw,300),h=150,pad=18,sw=w/n;let g="";
+ vals.forEach((v,i)=>{const hh=max?Math.min(v/max,1)*(h-pad-6):0;g+=`<rect class="cbar" x="${i*sw+sw*.15}" y="${h-pad-hh}" width="${sw*.7}" height="${hh}" rx="3" fill="${color}" style="animation-delay:${Math.min(i*15,400)}ms"><title>${labs[i]}: ${v}${unit}</title></rect>`;if(n<=14||i%Math.ceil(n/8)===0)g+=`<text x="${i*sw+sw/2}" y="${h-4}" font-size="9" text-anchor="middle" fill="var(--mute)">${n<=31?labs[i].slice(8):labs[i].slice(5)}</text>`});
+ return `<div style="overflow-x:auto"><svg viewBox="0 0 ${w} ${h}" width="100%" style="min-width:${Math.min(w,300)}px" role="img">${g}</svg></div>`}
+function extra7(){const keys=lastN(crange),av=a=>{const z=a.filter(Boolean);return z.length?(z.reduce((x,y)=>x+y,0)/z.length).toFixed(1):"–"};
+ const mood=keys.map(k=>S.moods[k]||0),sleep=keys.map(k=>+(S.sleep[k]||0).toFixed(1)),water=keys.map(k=>S.water[k]||0),spend=keys.map(k=>S.tx.filter(x=>x.t==="exp"&&x.d===k).reduce((a,x)=>a+x.a,0)),hab=keys.map(k=>S.habits.filter(h=>h.days.includes(k)).length);
+ const C=(t,note,svg)=>`<section><h2>${t}</h2><p class="chartnote">${note}</p>${svg}</section>`;
+ $("vcharts").innerHTML=`<section class="wide"><h2>Charts <small>last ${crange} days</small></h2><div style="display:flex;gap:8px;flex-wrap:wrap">${[7,14,30,90].map(n=>`<button class="tick ${n===crange?"on":""}" data-cr="${n}">${n} days</button>`).join("")}</div></section>`+
+ C("Mood","Average "+av(mood)+" / 5",bars(mood,keys,"var(--b)",5," / 5"))+C("Sleep","Average "+av(sleep)+" hours",bars(sleep,keys,"var(--a)",Math.max(10,...sleep)," h"))+C("Water","Average "+av(water)+" glasses a day",bars(water,keys,"#3b82c4",Math.max(8,...water)," glasses"))+C("Habits done","Average "+av(hab)+" of "+S.habits.length+" a day",bars(hab,keys,"#2e9e5b",Math.max(1,S.habits.length)," done"))+C("Spending","Total "+fmt(spend.reduce((a,b)=>a+b,0)),bars(spend,keys,"#e4572e",Math.max(1,...spend),""))}
+let calM=new Date(),calSel=today();calM.setDate(1);
+function extra8(){const y=calM.getFullYear(),m=calM.getMonth(),dim=new Date(y,m+1,0).getDate(),off=(new Date(y,m,1).getDay()+6)%7,t=today();
+ let cells=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>`<div class="hd">${d}</div>`).join("");for(let i=0;i<off;i++)cells+="<i></i>";
+ for(let d=1;d<=dim;d++){const k=y+"-"+P2(m+1)+"-"+P2(d),mo=S.moods[k],dots=(S.habits.some(h=>h.days.includes(k))?"●":"")+(S.notes[k]?" ✎":"");cells+=`<button class="day ${k===t?"today":""} ${k===calSel?"sel":""}" data-cd="${k}" aria-label="${k}" style="${mo?"background:color-mix(in srgb,var(--a) "+mo*14+"%,var(--card))":""}"><b>${d}</b><span>${mo?EM[mo-1]:""}</span><small>${dots}</small></button>`}
+ const k=calSel,hs=S.habits.filter(h=>h.days.includes(k)).map(h=>esc(h.x)),tk=S.tasks.filter(x=>x.u===k).map(x=>"<li><span>"+(x.d?"✔ ":"○ ")+esc(x.x)+(x.m?" ("+x.m+")":"")+"</span></li>").join(""),tx=S.tx.filter(x=>x.d===k&&x.t==="exp").reduce((a,x)=>a+x.a,0);
+ $("vcal").innerHTML=`<section class="wide"><h2><span>${new Date(y,m,1).toLocaleDateString(undefined,{month:"long",year:"numeric"})}</span><span><button class="ghost" data-cm="-1" aria-label="Previous month">‹</button><button class="ghost" data-cm="0">Today</button><button class="ghost" data-cm="1" aria-label="Next month">›</button></span></h2><div class="cal">${cells}</div><p class="chartnote" style="margin-top:8px">Colored days have a mood. ● habits done, ✎ note written.</p></section>`+
+ `<section class="wide"><h2>${new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</h2><ul><li><span>Mood</span><b>${S.moods[k]?EM[S.moods[k]-1]+" "+S.moods[k]+" / 5":"–"}</b></li><li><span>Sleep</span><b>${S.sleep[k]?S.sleep[k].toFixed(1)+" h":"–"}</b></li><li><span>Water</span><b>${S.water[k]||0} glasses</b></li><li><span>Habits done</span><b>${hs.join(", ")||"–"}</b></li><li><span>Spent</span><b>${fmt(tx)}</b></li></ul>${tk?"<h2 style='margin-top:14px'>Tasks due</h2><ul>"+tk+"</ul>":""}${S.notes[k]?"<h2 style='margin-top:14px'>Gratitude note</h2><p style='margin:0'>"+esc(S.notes[k])+"</p>":""}</section>`}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-cr],[data-cd],[data-cm]");if(!b)return;const d=b.dataset;if(d.cr)crange=+d.cr;else if(d.cd)calSel=d.cd;else if(d.cm==="0"){calM=new Date();calM.setDate(1);calSel=today()}else if(d.cm)calM=new Date(calM.getFullYear(),calM.getMonth()+(+d.cm),1);render()});
+$("conf").onchange=e=>{S.confetti=e.target.checked;save()};
+const _r7=render;render=function(){_r7();$("conf").checked=S.confetti!==false;extra7();extra8();checkWins()};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
  if(!u.username)u=await needName(u);
@@ -426,7 +478,7 @@ async function start(u,fresh){
  else{try{const r=localStorage.getItem("dash1");if(r)S=Object.assign(DEF(),JSON.parse(r))}catch(e){}ready=true;await push()}
  if(u.username&&S.name==="friend")S.name=u.username;
  $("who").innerHTML='<span style="color:#2e9e5b">\u25CF</span> Signed in as <b>'+esc(u.username||u.email)+"</b>";
- ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
+ wins=null;ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
  if(d.data)setCloud("Saved to your account");
  if(fresh)welcome(u,fresh==="new");
 }
