@@ -184,6 +184,12 @@ td,th{padding:7px 8px}
 <h2>Daily reminder <small id="rstate"></small></h2>
 <p id="rcount" aria-live="off" style="font-size:1.5rem;font-weight:800;margin:0 0 10px;color:var(--a)"></p>
 <form id="rform" style="margin:0;align-items:center"><label>Remind me at <input type="time" id="rtime" required style="width:auto;flex:none"></label><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="ron" style="flex:none;width:auto;padding:0"> Reminder on</label><div id="rdays" style="display:flex;gap:6px;flex-wrap:wrap;width:100%;order:5"><label class="chip"><input type="checkbox" data-d="1"> Mon</label><label class="chip"><input type="checkbox" data-d="2"> Tue</label><label class="chip"><input type="checkbox" data-d="3"> Wed</label><label class="chip"><input type="checkbox" data-d="4"> Thu</label><label class="chip"><input type="checkbox" data-d="5"> Fri</label><label class="chip"><input type="checkbox" data-d="6"> Sat</label><label class="chip"><input type="checkbox" data-d="0"> Sun</label><button class="ghost" id="rall" type="button">Every day</button><button class="ghost" id="rwk" type="button">Weekdays</button></div><button class="btn">Save</button><button class="tick" id="rics" type="button">Add to phone calendar</button><button class="tick" id="rtest" type="button">Test ring</button></form>
+<div id="rsound" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px">
+<label>Ring sound <select id="rtone" style="width:auto;flex:none"><option value="beep">Classic beep</option><option value="chime">Soft chime</option><option value="melody">Rising melody</option><option value="file">My own song (from this device)</option><option value="url">A link to an audio file</option></select></label>
+<span id="rfilebox" hidden style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input type="file" id="rfile" accept="audio/*" hidden><button class="tick" id="rpick" type="button">Choose song</button><span id="rfname" style="color:var(--mute);font-size:.9rem"></span></span>
+<input id="rurl" type="url" placeholder="https://example.com/song.mp3" hidden aria-label="Link to an audio file" style="min-width:240px">
+</div>
+<p class="empty" style="margin:8px 0 0">Songs are stored in this browser on this device only (up to 15 MB) and don't sync to your other devices. Can't stream from YouTube or Spotify here, but you can download free music from sites like <a href="https://pixabay.com/music/" target="_blank" rel="noopener">Pixabay</a> or <a href="https://freesound.org/" target="_blank" rel="noopener">Freesound</a>, then pick the file.</p>
 <p class="empty" style="margin:8px 0 0">Set it once and it repeats on the days you tick, every week. The countdown and the ring (sound, banner, vibration, notification) work only while this page stays open in a browser tab. For a reminder that works when the page is closed, tap "Add to phone calendar" and open the downloaded file. It adds a daily alarm at your chosen time.</p>
 </section>
 <section class="wide">
@@ -212,7 +218,7 @@ td,th{padding:7px 8px}
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6]},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
+const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6],tone:"beep",url:""},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
 let S=DEF();
 let uid=null,ready=false,tm;
 const api=async(m,u,b)=>{const r=await fetch(u,{method:m,headers:b?{"Content-Type":"application/json"}:{},body:b?JSON.stringify(b):undefined,credentials:"same-origin"});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j};
@@ -348,9 +354,18 @@ const ALL=[0,1,2,3,4,5,6],DN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 let ac=null,ringTimer=null,snoozeAt=0;const baseTitle=document.title;
 function unlock(){try{if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch(e){}}
 document.addEventListener("click",unlock,{passive:true});
-function beep(){if(!ac)return;const t=ac.currentTime;[0,.28,.56].forEach(o=>{const os=ac.createOscillator(),g=ac.createGain();os.type="sine";os.frequency.value=880;g.gain.setValueAtTime(.0001,t+o);g.gain.exponentialRampToValueAtTime(.35,t+o+.02);g.gain.exponentialRampToValueAtTime(.0001,t+o+.22);os.connect(g);g.connect(ac.destination);os.start(t+o);os.stop(t+o+.25)})}
-function stopRing(hide){clearInterval(ringTimer);ringTimer=null;document.title=baseTitle;if(hide)$("rbanner").hidden=true}
-function ring(){unlock();$("rbanner").hidden=false;document.title="\u23F0 Check-in time!";const go=()=>{beep();try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}};go();clearInterval(ringTimer);let n=0;ringTimer=setInterval(()=>{if(++n>9)stopRing(false);else go()},3000);
+function tone(k){if(!ac)return;const t=ac.currentTime,seq=k==="chime"?[[660,0],[990,.35]]:k==="melody"?[[523,0],[659,.2],[784,.4],[1047,.6]]:[[880,0],[880,.28],[880,.56]],d=k==="chime"?.5:.22;seq.forEach(([f,o])=>{const os=ac.createOscillator(),g=ac.createGain();os.type=k==="chime"?"triangle":"sine";os.frequency.value=f;g.gain.setValueAtTime(.0001,t+o);g.gain.exponentialRampToValueAtTime(.35,t+o+.02);g.gain.exponentialRampToValueAtTime(.0001,t+o+d);os.connect(g);g.connect(ac.destination);os.start(t+o);os.stop(t+o+d+.03)})}
+const idb=()=>new Promise((ok,no)=>{const q=indexedDB.open("dashfiles",1);q.onupgradeneeded=()=>q.result.createObjectStore("f");q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)});
+const idbSet=async(k,v)=>{const d=await idb();return new Promise((ok,no)=>{const t=d.transaction("f","readwrite");t.objectStore("f").put(v,k);t.oncomplete=ok;t.onerror=()=>no(t.error)})};
+const idbGet=async k=>{const d=await idb();return new Promise((ok,no)=>{const r=d.transaction("f").objectStore("f").get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)})};
+let song=null;
+function stopSong(){if(song){try{song.pause()}catch(e){}song=null}}
+async function startSong(){stopSong();const r=S.reminder;let src=null;if(r.tone==="file"){try{const f=await idbGet("ring:"+uid);if(f&&f.blob)src=URL.createObjectURL(f.blob)}catch(e){}}else if(r.tone==="url"&&r.url)src=r.url;if(!src)return false;try{const a=new Audio(src);a.loop=true;await a.play();song=a;return true}catch(e){return false}}
+function stopRing(hide){clearInterval(ringTimer);ringTimer=null;stopSong();document.title=baseTitle;if(hide)$("rbanner").hidden=true}
+function ring(){unlock();$("rbanner").hidden=false;document.title="\u23F0 Check-in time!";const k=S.reminder.tone||"beep",useSong=k==="file"||k==="url";let fb=!useSong;
+ const go=()=>{if(fb)tone(useSong?"beep":k);try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}};
+ if(useSong)startSong().then(ok=>{if(!ok){fb=true;tone("beep")}});
+ go();clearInterval(ringTimer);let n=0;ringTimer=setInterval(()=>{if(++n>(useSong?19:9))stopRing(false);else go()},3000);
  try{if("Notification" in window&&Notification.permission==="granted")new Notification("My Dashboard",{body:"Time for your daily check-in. Log in and update your day."})}catch(e){}}
 const hms=ms=>{const s=Math.max(0,Math.floor(ms/1000)),h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h+"h "+P2(m)+"m "+P2(s%60)+"s"};
 function nextRing(){const r=S.reminder,days=r.days&&r.days.length?r.days:ALL,p=r.time.split(":"),n=new Date();for(let i=0;i<8;i++){const t=new Date(n.getFullYear(),n.getMonth(),n.getDate()+i,+p[0],+p[1],0);if(t>n&&days.includes(t.getDay()))return t}return new Date(n.getTime()+864e5)}
@@ -362,14 +377,18 @@ function tick(){if(!uid||!S.reminder)return;const r=S.reminder,el=$("rcount");
  if(days.includes(n.getDay())&&diff>=0&&diff<=60&&last!==today()&&!ringTimer){try{localStorage.setItem("lastRemind",today())}catch(e){}ring()}
  el.textContent=ringTimer?"\u23F0 Ringing now":"Rings in "+hms(nextRing()-now)+" ("+DN[nextRing().getDay()]+" at "+r.time+")"}
 let rt;
-function extra6(){if(document.activeElement!==$("rtime"))$("rtime").value=S.reminder.time;$("ron").checked=!!S.reminder.on;const dd=S.reminder.days&&S.reminder.days.length?S.reminder.days:ALL;document.querySelectorAll("#rdays input").forEach(c=>{if(document.activeElement!==c)c.checked=dd.includes(+c.dataset.d)});$("rstate").textContent=S.reminder.on?"on at "+S.reminder.time+", "+(dd.length===7?"every day":[1,2,3,4,5,6,0].filter(x=>dd.includes(x)).map(x=>DN[x]).join(" ")):"off";if(!rt)rt=setInterval(tick,1000);tick()}
+function extra6(){if(document.activeElement!==$("rtime"))$("rtime").value=S.reminder.time;$("ron").checked=!!S.reminder.on;const dd=S.reminder.days&&S.reminder.days.length?S.reminder.days:ALL;document.querySelectorAll("#rdays input").forEach(c=>{if(document.activeElement!==c)c.checked=dd.includes(+c.dataset.d)});$("rtone").value=S.reminder.tone||"beep";if(document.activeElement!==$("rurl"))$("rurl").value=S.reminder.url||"";showSound();if(S.reminder.tone==="file")idbGet("ring:"+uid).then(f=>{$("rfname").textContent=f?f.name:"No song on this device yet. Choose one."}).catch(()=>{});$("rstate").textContent=S.reminder.on?"on at "+S.reminder.time+", "+(dd.length===7?"every day":[1,2,3,4,5,6,0].filter(x=>dd.includes(x)).map(x=>DN[x]).join(" ")):"off";if(!rt)rt=setInterval(tick,1000);tick()}
 const _r6=render;render=function(){_r6();extra6()};
+const showSound=()=>{const k=$("rtone").value;$("rfilebox").hidden=k!=="file";$("rurl").hidden=k!=="url"};
+$("rtone").onchange=()=>{showSound();S.reminder.tone=$("rtone").value;save()};
+$("rpick").onclick=()=>$("rfile").click();
+$("rfile").onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>15*1048576){alert("That file is over 15 MB. Choose a shorter song or a smaller file.");return}try{await idbSet("ring:"+uid,{blob:f,name:f.name});S.reminder.tone="file";save();render();alert("Song saved on this device.")}catch(x){alert("Could not save the song in this browser.")}e.target.value=""};
 const setDays=a=>document.querySelectorAll("#rdays input").forEach(c=>c.checked=a.includes(+c.dataset.d));
 $("rall").onclick=()=>setDays(ALL);$("rwk").onclick=()=>setDays([1,2,3,4,5]);
 $("rdone").onclick=()=>stopRing(true);
 $("rsnooze").onclick=()=>{stopRing(true);snoozeAt=Date.now()+10*60000;tick()};
 $("rtest").onclick=()=>{unlock();if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();ring()};
-$("rform").onsubmit=e=>{e.preventDefault();const pick=[...document.querySelectorAll("#rdays input:checked")].map(c=>+c.dataset.d);if(!pick.length){alert("Pick at least one day.");return}S.reminder={time:$("rtime").value,on:$("ron").checked,days:pick};if(S.reminder.on&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission();snoozeAt=0;save();render()};
+$("rform").onsubmit=e=>{e.preventDefault();const pick=[...document.querySelectorAll("#rdays input:checked")].map(c=>+c.dataset.d);if(!pick.length){alert("Pick at least one day.");return}const tn=$("rtone").value,ul=$("rurl").value.trim();if(tn==="url"&&!/^https:\/\//.test(ul)){alert("Paste a link that starts with https:// and points to an audio file.");return}S.reminder={time:$("rtime").value,on:$("ron").checked,days:pick,tone:tn,url:ul};if(S.reminder.on&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission();snoozeAt=0;save();render()};
 $("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),dl=[...document.querySelectorAll("#rdays input:checked")].map(c=>+c.dataset.d),D=dl.length?dl:ALL,BY=["SU","MO","TU","WE","TH","FR","SA"];let d=new Date();for(let i=0;i<7&&!D.includes(d.getDay());i++)d.setDate(d.getDate()+1);
  const ds=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate()),rule=D.length===7?"RRULE:FREQ=DAILY":"RRULE:FREQ=WEEKLY;BYDAY="+D.map(x=>BY[x]).join(",");
  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Dashboard//EN","BEGIN:VEVENT","UID:dashboard-reminder-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M",rule,"SUMMARY:Log in to My Dashboard","DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to My Dashboard","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
