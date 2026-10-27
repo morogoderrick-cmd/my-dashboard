@@ -58,7 +58,7 @@ input[type=checkbox]{flex:none;width:20px;height:20px;accent-color:var(--a)}
 .tx li{font-size:.9rem}
 .tx .amt{flex:none;font-weight:600}
 .theme{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:16px}
-.streak{color:var(--b);font-weight:800;min-width:3.2ch;text-align:right}
+.streak{color:var(--b);font-weight:800;min-width:7ch;text-align:right}
 .tick{background:none;border:2px solid var(--a);color:var(--a);border-radius:8px;padding:5px 10px;font-weight:600;cursor:pointer}
 .tick.on{background:var(--a);color:#fff}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .tick.on{color:#0b1218}}
@@ -101,7 +101,7 @@ td,th{padding:7px 8px}
 .cal .hd{text-align:center;color:var(--mute);font-size:.8rem}
 .day{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.8rem;padding:2px;transition:transform .15s}
 .day:hover{transform:scale(1.06)}
-.day span{font-size:1.1rem;line-height:1}
+.day span{font-size:.62rem;line-height:1.1;font-weight:600}
 .day small{font-size:.65rem;color:var(--mute)}
 .day.today{outline:2px solid var(--b)}
 .day.sel{outline:2px solid var(--a)}
@@ -170,7 +170,7 @@ td,th{padding:7px 8px}
 </section>
 <section>
 <h2>Mood <small>how was today?</small></h2>
-<div style="display:flex;gap:8px;margin-bottom:12px" id="moodbtns"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px" id="moodbtns"></div>
 <div style="display:flex;gap:6px" id="moodchart"></div>
 </section>
 <section>
@@ -255,16 +255,16 @@ $("name").oninput=e=>{S.name=e.target.value;save()};
 if(S.theme)document.documentElement.dataset.theme=S.theme;
 $("theme").onclick=()=>{const dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;S.theme=dark?"light":"dark";document.documentElement.dataset.theme=S.theme;save()};
 function render(){
- $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${isLate(t)?"var(--bad)":"var(--mute)"}">${isLate(t)?"overdue ":"due "}${dueTxt(t)}</small>`:""}</span><button class="ghost" data-dt="${i}" aria-label="Delete task">✕</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
+ $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${isLate(t)?"var(--bad)":"var(--mute)"}">${isLate(t)?"overdue ":"due "}${dueTxt(t)}</small>`:""}</span><button class="ghost" data-dt="${i}" aria-label="Delete task">Remove</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
  $("tcount").textContent=S.tasks.filter(t=>t.d).length+" of "+S.tasks.length+" done";
- $("goals").innerHTML=S.goals.length?S.goals.map((g,i)=>`<div class="goal"><div class="row"><b>${esc(g.x)}</b><span>${g.p}%</span><button class="ghost" data-gm="${i}" aria-label="Decrease">−</button><button class="ghost" data-gp="${i}" aria-label="Increase">+</button><button class="ghost" data-dg="${i}" aria-label="Delete goal">✕</button></div><div class="bar"><i style="width:${g.p}%"></i></div></div>`).join(""):'<div class="empty">No goals yet. Add one you want to move forward this month.</div>';
+ $("goals").innerHTML=S.goals.length?S.goals.map((g,i)=>`<div class="goal"><div class="row"><b>${esc(g.x)}</b><span>${g.p}%</span><button class="ghost" data-gm="${i}" aria-label="Decrease">−</button><button class="ghost" data-gp="${i}" aria-label="Increase">+</button><button class="ghost" data-dg="${i}" aria-label="Delete goal">Remove</button></div><div class="bar"><i style="width:${g.p}%"></i></div></div>`).join(""):'<div class="empty">No goals yet. Add one you want to move forward this month.</div>';
  const inc=S.tx.filter(t=>t.t==="inc").reduce((a,t)=>a+t.a,0),exp=S.tx.filter(t=>t.t==="exp").reduce((a,t)=>a+t.a,0);
  $("inc").textContent=fmt(inc);$("exp").textContent=fmt(exp);$("left").textContent=fmt(inc-exp);
  $("leftbox").className=inc-exp<0?"neg":"left";
  const by={};S.tx.filter(t=>t.t==="exp").forEach(t=>by[t.c]=(by[t.c]||0)+t.a);
  const mx=Math.max(1,...Object.values(by));
  $("cats").innerHTML=Object.keys(by).length?Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="cat"><span>${esc(c)}</span><div class="bar"><i style="width:${v/mx*100}%"></i></div><em>${fmt(v)}</em></div>`).join(""):'<div class="empty">Add an expense to see where your money goes.</div>';
- $("tx").innerHTML=S.tx.slice().reverse().map((t,j)=>{const i=S.tx.length-1-j;return `<li><span>${esc(t.c)}</span><span class="amt">${t.t==="inc"?"+":"−"}${fmt(t.a)}</span><button class="ghost" data-dx="${i}" aria-label="Delete entry">✕</button></li>`}).join("");
+ $("tx").innerHTML=S.tx.slice().reverse().map((t,j)=>{const i=S.tx.length-1-j;return `<li><span>${esc(t.c)}</span><span class="amt">${t.t==="inc"?"+":"−"}${fmt(t.a)}</span><button class="ghost" data-dx="${i}" aria-label="Delete entry">Remove</button></li>`}).join("");
 }
 document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
  if(d.dt!==undefined)S.tasks.splice(+d.dt,1);
@@ -283,7 +283,7 @@ const today=()=>key(new Date());
 function streak(days){let n=0,d=new Date();if(!days.includes(key(d)))d.setDate(d.getDate()-1);while(days.includes(key(d))){n++;d.setDate(d.getDate()-1)}return n}
 function extra(){
  const t=today();
- $("habits").innerHTML=S.habits.length?S.habits.map((x,i)=>{const on=x.days.includes(t);return `<li><span>${esc(x.x)}</span><b class="streak">${streak(x.days)}🔥</b><button class="tick ${on?"on":""}" data-hd="${i}" aria-pressed="${on}">${on?"Done":"Mark done"}</button><button class="ghost" data-hx="${i}" aria-label="Delete habit">✕</button></li>`}).join(""):'<li class="empty">No habits yet. Add one you want to repeat every day.</li>';
+ $("habits").innerHTML=S.habits.length?S.habits.map((x,i)=>{const on=x.days.includes(t);return `<li><span>${esc(x.x)}</span><b class="streak">${streak(x.days)} day${streak(x.days)===1?"":"s"}</b><button class="tick ${on?"on":""}" data-hd="${i}" aria-pressed="${on}">${on?"Done":"Mark done"}</button><button class="ghost" data-hx="${i}" aria-label="Delete habit">Remove</button></li>`}).join(""):'<li class="empty">No habits yet. Add one you want to repeat every day.</li>';
  const ks=Object.keys(S.notes).sort().reverse().slice(0,5);
  $("ntoday").textContent=S.notes[t]?"today saved":"nothing saved today";
  $("notes").innerHTML=ks.length?ks.map(k=>`<li class="note"><span><small>${esc(new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}))}</small>${esc(S.notes[k])}</span></li>`).join(""):'<li class="empty">Write one good thing from today before you sleep.</li>';
@@ -296,7 +296,7 @@ document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
  save();render()});
 $("hform").onsubmit=e=>{e.preventDefault();S.habits.push({x:$("hin").value.trim(),days:[]});$("hin").value="";save();render()};
 $("nform").onsubmit=e=>{e.preventDefault();S.notes[today()]=$("nin").value.trim();$("nin").value="";save();render()};
-const EM=["😞","😕","😐","🙂","😄"];
+const EM=["Awful","Low","Okay","Good","Happy"];
 const lastN=n=>{const a=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);a.push(key(d))}return a};
 function extra2(){
  const t=today(),w=lastN(7);
@@ -319,12 +319,12 @@ function extra3(){
  const t=today(),n=S.water[t]||0,rd=S.rdone[t]||[];
  if(document.activeElement!==$("cur"))$("cur").value=S.cur;
  $("nin").placeholder=PR[new Date().getDay()];
- $("glasses").innerHTML=Array.from({length:8},(_,i)=>`<button class="tick ${i<n?"on":""}" data-w="${i}" aria-label="Glass ${i+1}">💧</button>`).join("");
+ $("glasses").innerHTML=Array.from({length:8},(_,i)=>`<button class="tick ${i<n?"on":""}" data-w="${i}" aria-label="Glass ${i+1}">${i+1}</button>`).join("");
  $("wcount").textContent=n+" of 8 glasses";
  $("routine").innerHTML=S.routine.map((x,i)=>`<li><input type="checkbox" data-r="${i}" ${rd.includes(i)?"checked":""} aria-label="${esc(x)}"><span>${esc(x)}</span></li>`).join("");
  const sl=lastN(7).map(k=>S.sleep[k]).filter(Boolean),sv=S.sleep[t];
  $("sleepinfo").textContent=(sv?"Logged today: "+sv.toFixed(1)+" h. ":"")+(sl.length?"7-day average: "+(sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(1)+" h":"No sleep logged yet.");
- $("ideas").innerHTML=S.ideas.length?S.ideas.map((x,i)=>`<li><span>${esc(x)}</span><button class="ghost" data-ix="${i}" aria-label="Delete idea">✕</button></li>`).join(""):'<li class="empty">Empty your head here. Add a thought or idea.</li>';
+ $("ideas").innerHTML=S.ideas.length?S.ideas.map((x,i)=>`<li><span>${esc(x)}</span><button class="ghost" data-ix="${i}" aria-label="Delete idea">Remove</button></li>`).join(""):'<li class="empty">Empty your head here. Add a thought or idea.</li>';
 }
 const _r3=render;render=function(){_r3();extra3()};
 document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
@@ -382,7 +382,7 @@ let song=null;
 function stopSong(){if(song){try{song.pause()}catch(e){}song=null}}
 async function startSong(){stopSong();const r=S.reminder;let src=null;if(r.tone==="file"){try{const f=await idbGet("ring:"+uid);if(f&&f.blob)src=URL.createObjectURL(f.blob)}catch(e){}}else if(r.tone==="url"&&r.url)src=r.url;if(!src)return false;try{const a=new Audio(src);a.loop=true;await a.play();song=a;return true}catch(e){return false}}
 function stopRing(hide){clearInterval(ringTimer);ringTimer=null;stopSong();document.title=baseTitle;if(hide)$("rbanner").hidden=true}
-function ring(){unlock();$("rbanner").hidden=false;document.title="\u23F0 Check-in time!";const k=S.reminder.tone||"beep",useSong=k==="file"||k==="url";let fb=!useSong;
+function ring(){unlock();$("rbanner").hidden=false;document.title="Check-in time!";const k=S.reminder.tone||"beep",useSong=k==="file"||k==="url";let fb=!useSong;
  const go=()=>{if(fb)tone(useSong?"beep":k);try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}};
  if(useSong)startSong().then(ok=>{if(!ok){fb=true;tone("beep")}});
  go();clearInterval(ringTimer);let n=0;ringTimer=setInterval(()=>{if(++n>(useSong?19:9))stopRing(false);else go()},3000);
@@ -395,7 +395,7 @@ function tick(){if(!uid||!S.reminder)return;const r=S.reminder,el=$("rcount");
  if(snoozeAt){if(now>=snoozeAt){snoozeAt=0;ring()}else{el.textContent="Snoozed. Rings in "+hms(snoozeAt-now);return}}
  const days=r.days&&r.days.length?r.days:ALL,n=new Date(),p=r.time.split(":"),diff=n.getHours()*60+n.getMinutes()-(+p[0]*60+ +p[1]);let last="";try{last=localStorage.getItem("lastRemind")}catch(e){}
  if(days.includes(n.getDay())&&diff>=0&&diff<=60&&last!==today()&&!ringTimer){try{localStorage.setItem("lastRemind",today())}catch(e){}ring()}
- el.textContent=ringTimer?"\u23F0 Ringing now":"Rings in "+hms(nextRing()-now)+" ("+DN[nextRing().getDay()]+" at "+r.time+")"}
+ el.textContent=ringTimer?"Ringing now":"Rings in "+hms(nextRing()-now)+" ("+DN[nextRing().getDay()]+" at "+r.time+")"}
 let rt;
 function extra6(){if(document.activeElement!==$("rtime"))$("rtime").value=S.reminder.time;$("ron").checked=!!S.reminder.on;const dd=S.reminder.days&&S.reminder.days.length?S.reminder.days:ALL;document.querySelectorAll("#rdays input").forEach(c=>{if(document.activeElement!==c)c.checked=dd.includes(+c.dataset.d)});$("rtone").value=S.reminder.tone||"beep";if(document.activeElement!==$("rurl"))$("rurl").value=S.reminder.url||"";showSound();if(S.reminder.tone==="file")idbGet("ring:"+uid).then(f=>{$("rfname").textContent=f?f.name:"No song on this device yet. Choose one."}).catch(()=>{});$("rstate").textContent=S.reminder.on?"on at "+S.reminder.time+", "+(dd.length===7?"every day":[1,2,3,4,5,6,0].filter(x=>dd.includes(x)).map(x=>DN[x]).join(" ")):"off";if(!rt)rt=setInterval(tick,1000);tick()}
 const _r6=render;render=function(){_r6();extra6()};
@@ -446,7 +446,7 @@ function scoreHTML(){const s=dayScore(),c=326.7,off=c*(1-s.pct/100),msg=s.pct>=1
 let wins=null;
 function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;t.style.animation="none";void t.offsetWidth;t.style.animation="rise .4s ease both";clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true},3400)}
 function confetti(){const c=document.createElement("canvas");c.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:90";c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext("2d"),cols=["#1f7a8c","#d99a00","#e4572e","#7b61ff","#2e9e5b","#ff7aa2"],ps=Array.from({length:150},()=>({x:c.width/2+(Math.random()-.5)*140,y:c.height*.35,vx:(Math.random()-.5)*15,vy:-Math.random()*13-4,s:Math.random()*7+5,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:cols[Math.random()*6|0]}));let f=0;(function go(){x.clearRect(0,0,c.width,c.height);ps.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.globalAlpha=Math.max(0,1-f/150);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6);x.restore()});if(++f<150)requestAnimationFrame(go);else c.remove()})()}
-function celebrate(m){toast("🎉 "+m);confetti()}
+function celebrate(m){toast(m);confetti()}
 function checkWins(){const sc=dayScore(),tAll=sc.rel.length>0&&sc.rel.every(x=>x.d),g=new Set(S.goals.filter(x=>x.p>=100).map(x=>x.x)),now={tAll,p100:sc.pct>=100,g};
  if(wins&&S.confetti!==false){if(now.p100&&!wins.p100)celebrate("Perfect day! 100%");else if(tAll&&!wins.tAll)celebrate("All tasks done!");else{const ng=[...g].find(x=>!wins.g.has(x));if(ng)celebrate("Goal reached: "+ng)}}
  wins=now}
@@ -462,9 +462,9 @@ function extra7(){const keys=lastN(crange),av=a=>{const z=a.filter(Boolean);retu
 let calM=new Date(),calSel=today();calM.setDate(1);
 function extra8(){const y=calM.getFullYear(),m=calM.getMonth(),dim=new Date(y,m+1,0).getDate(),off=(new Date(y,m,1).getDay()+6)%7,t=today();
  let cells=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=>`<div class="hd">${d}</div>`).join("");for(let i=0;i<off;i++)cells+="<i></i>";
- for(let d=1;d<=dim;d++){const k=y+"-"+P2(m+1)+"-"+P2(d),mo=S.moods[k],dots=(S.habits.some(h=>h.days.includes(k))?"●":"")+(S.notes[k]?" ✎":"");cells+=`<button class="day ${k===t?"today":""} ${k===calSel?"sel":""}" data-cd="${k}" aria-label="${k}" style="${mo?"background:color-mix(in srgb,var(--a) "+mo*14+"%,var(--card))":""}"><b>${d}</b><span>${mo?EM[mo-1]:""}</span><small>${dots}</small></button>`}
- const k=calSel,hs=S.habits.filter(h=>h.days.includes(k)).map(h=>esc(h.x)),tk=S.tasks.filter(x=>x.u===k).map(x=>"<li><span>"+(x.d?"✔ ":"○ ")+esc(x.x)+(x.m?" ("+x.m+")":"")+"</span></li>").join(""),tx=S.tx.filter(x=>x.d===k&&x.t==="exp").reduce((a,x)=>a+x.a,0);
- $("vcal").innerHTML=`<section class="wide"><h2><span>${new Date(y,m,1).toLocaleDateString(undefined,{month:"long",year:"numeric"})}</span><span><button class="ghost" data-cm="-1" aria-label="Previous month">‹</button><button class="ghost" data-cm="0">Today</button><button class="ghost" data-cm="1" aria-label="Next month">›</button></span></h2><div class="cal">${cells}</div><p class="chartnote" style="margin-top:8px">Colored days have a mood. ● habits done, ✎ note written.</p></section>`+
+ for(let d=1;d<=dim;d++){const k=y+"-"+P2(m+1)+"-"+P2(d),mo=S.moods[k],dots=(S.habits.some(h=>h.days.includes(k))?"H":"")+(S.notes[k]?" N":"");cells+=`<button class="day ${k===t?"today":""} ${k===calSel?"sel":""}" data-cd="${k}" aria-label="${k}" style="${mo?"background:color-mix(in srgb,var(--a) "+mo*14+"%,var(--card))":""}"><b>${d}</b><span>${mo?EM[mo-1]:""}</span><small>${dots}</small></button>`}
+ const k=calSel,hs=S.habits.filter(h=>h.days.includes(k)).map(h=>esc(h.x)),tk=S.tasks.filter(x=>x.u===k).map(x=>"<li><span>"+(x.d?"Done: ":"To do: ")+esc(x.x)+(x.m?" ("+x.m+")":"")+"</span></li>").join(""),tx=S.tx.filter(x=>x.d===k&&x.t==="exp").reduce((a,x)=>a+x.a,0);
+ $("vcal").innerHTML=`<section class="wide"><h2><span>${new Date(y,m,1).toLocaleDateString(undefined,{month:"long",year:"numeric"})}</span><span><button class="ghost" data-cm="-1" aria-label="Previous month">Prev</button><button class="ghost" data-cm="0">Today</button><button class="ghost" data-cm="1" aria-label="Next month">Next</button></span></h2><div class="cal">${cells}</div><p class="chartnote" style="margin-top:8px">Colored days have a mood. H = habit done, N = note written.</p></section>`+
  `<section class="wide"><h2>${new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})}</h2><ul><li><span>Mood</span><b>${S.moods[k]?EM[S.moods[k]-1]+" "+S.moods[k]+" / 5":"–"}</b></li><li><span>Sleep</span><b>${S.sleep[k]?S.sleep[k].toFixed(1)+" h":"–"}</b></li><li><span>Water</span><b>${S.water[k]||0} glasses</b></li><li><span>Habits done</span><b>${hs.join(", ")||"–"}</b></li><li><span>Spent</span><b>${fmt(tx)}</b></li></ul>${tk?"<h2 style='margin-top:14px'>Tasks due</h2><ul>"+tk+"</ul>":""}${S.notes[k]?"<h2 style='margin-top:14px'>Gratitude note</h2><p style='margin:0'>"+esc(S.notes[k])+"</p>":""}</section>`}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-cr],[data-cd],[data-cm]");if(!b)return;const d=b.dataset;if(d.cr)crange=+d.cr;else if(d.cd)calSel=d.cd;else if(d.cm==="0"){calM=new Date();calM.setDate(1);calSel=today()}else if(d.cm)calM=new Date(calM.getFullYear(),calM.getMonth()+(+d.cm),1);render()});
 $("conf").onchange=e=>{S.confetti=e.target.checked;save()};
