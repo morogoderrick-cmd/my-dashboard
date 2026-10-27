@@ -94,6 +94,7 @@ td,th{padding:7px 8px}
 .chip{display:flex;gap:5px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:.88rem;cursor:pointer}
 .chip input{flex:none;width:auto;padding:0;margin:0}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
@@ -136,7 +137,7 @@ td,th{padding:7px 8px}
 <section>
 <h2>Top tasks <small id="tcount"></small></h2>
 <ul id="tasks"></ul>
-<form id="tform"><input id="tin" placeholder="Add a task for tomorrow" aria-label="New task" required><input type="date" id="tdue" aria-label="Due date" style="flex:none;width:auto"><button class="btn">Add task</button></form>
+<form id="tform"><input id="tin" placeholder="Add a task for tomorrow" aria-label="New task" required><input type="date" id="tdue" aria-label="Due date" style="flex:none;width:auto"><input type="time" id="ttime" aria-label="Due time" style="flex:none;width:auto"><button class="btn">Add task</button></form>
 </section>
 <section>
 <h2>Goals <small>tap + or − to update</small></h2>
@@ -214,7 +215,7 @@ td,th{padding:7px 8px}
 <div class="grid" id="vmonth" hidden></div>
 <div class="grid" id="vyear" hidden></div>
 <div class="grid" id="vyears" hidden></div>
-<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dl">Download my data</button><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
+<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -227,6 +228,9 @@ async function push(){setCloud("Saving\u2026");try{await api("PUT","/api/data",{
 function setCloud(t){const c=$("cloud");if(c)c.textContent=t}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const fmt=n=>(S.cur?S.cur+" ":"")+n.toLocaleString(undefined,{maximumFractionDigits:2});
+const hmNow=()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
+const isLate=t=>!t.d&&t.u&&(t.u<today()||(t.u===today()&&t.m&&t.m<hmNow()));
+const dueTxt=t=>t.u?t.u+(t.m?" at "+t.m:""):"";
 const h=new Date().getHours();
 $("hello").textContent=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
 $("date").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
@@ -235,7 +239,7 @@ $("name").oninput=e=>{S.name=e.target.value;save()};
 if(S.theme)document.documentElement.dataset.theme=S.theme;
 $("theme").onclick=()=>{const dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;S.theme=dark?"light":"dark";document.documentElement.dataset.theme=S.theme;save()};
 function render(){
- $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${!t.d&&t.u<today()?"var(--bad)":"var(--mute)"}">${!t.d&&t.u<today()?"overdue ":"due "}${t.u}</small>`:""}</span><button class="ghost" data-dt="${i}" aria-label="Delete task">✕</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
+ $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${isLate(t)?"var(--bad)":"var(--mute)"}">${isLate(t)?"overdue ":"due "}${dueTxt(t)}</small>`:""}</span><button class="ghost" data-dt="${i}" aria-label="Delete task">✕</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
  $("tcount").textContent=S.tasks.filter(t=>t.d).length+" of "+S.tasks.length+" done";
  $("goals").innerHTML=S.goals.length?S.goals.map((g,i)=>`<div class="goal"><div class="row"><b>${esc(g.x)}</b><span>${g.p}%</span><button class="ghost" data-gm="${i}" aria-label="Decrease">−</button><button class="ghost" data-gp="${i}" aria-label="Increase">+</button><button class="ghost" data-dg="${i}" aria-label="Delete goal">✕</button></div><div class="bar"><i style="width:${g.p}%"></i></div></div>`).join(""):'<div class="empty">No goals yet. Add one you want to move forward this month.</div>';
  const inc=S.tx.filter(t=>t.t==="inc").reduce((a,t)=>a+t.a,0),exp=S.tx.filter(t=>t.t==="exp").reduce((a,t)=>a+t.a,0);
@@ -255,7 +259,7 @@ document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
  else return;
  save();render()});
 $("tasks").addEventListener("change",e=>{const i=e.target.dataset.t;if(i===undefined)return;S.tasks[+i].d=e.target.checked;save();render()});
-$("tform").onsubmit=e=>{e.preventDefault();S.tasks.push({x:$("tin").value.trim(),d:false,u:$("tdue").value});$("tdue").value="";$("tin").value="";save();render()};
+$("tform").onsubmit=e=>{e.preventDefault();S.tasks.push({x:$("tin").value.trim(),d:false,u:$("tdue").value||($("ttime").value?today():""),m:$("ttime").value});$("tdue").value="";$("ttime").value="";$("tin").value="";save();render()};
 $("gform").onsubmit=e=>{e.preventDefault();S.goals.push({x:$("gin").value.trim(),p:0});$("gin").value="";save();render()};
 $("bform").onsubmit=e=>{e.preventDefault();const a=parseFloat($("bamt").value);if(!(a>0))return;S.tx.push({t:$("btype").value,c:$("btype").value==="inc"?"Income":$("bcat").value,a,d:today()});$("bamt").value="";save();render()};
 const key=d=>d.toLocaleDateString("en-CA");
@@ -319,8 +323,8 @@ function show(v){["dash","today","week","month","year","years"].forEach(x=>{$("v
 document.addEventListener("click",e=>{const v=e.target.dataset&&e.target.dataset.v;if(v&&["dash","today","week","month","year","years"].includes(v))show(v)});
 function extra4(){
  const t=today(),rd=S.rdone[t]||[],w=lastN(7);
- const od=S.tasks.filter(x=>!x.d&&x.u&&x.u<t),dt=S.tasks.filter(x=>!x.d&&(!x.u||x.u===t)),up=S.tasks.filter(x=>!x.d&&x.u&&x.u>t);
- const tk=a=>a.map(x=>esc(x.x)+(x.u?` <small>(${x.u})</small>`:""));
+ const srt=(a,b)=>((a.u||"")+(a.m||"99")).localeCompare((b.u||"")+(b.m||"99")),od=S.tasks.filter(isLate).sort(srt),dt=S.tasks.filter(x=>!x.d&&!isLate(x)&&(!x.u||x.u===t)).sort(srt),up=S.tasks.filter(x=>!x.d&&x.u&&x.u>t).sort(srt);
+ const tk=a=>a.map(x=>esc(x.x)+(x.u?` <small>(${dueTxt(x)})</small>`:""));
  const L=(h,a)=>`<section><h2>${h}</h2>`+(a.length?`<ul>${a.map(x=>`<li><span>${x}</span></li>`).join("")}</ul>`:'<p class="empty">Nothing here.</p>')+"</section>";
  const sp=k=>fmt(S.tx.filter(x=>x.t==="exp"&&x.d===k).reduce((a,x)=>a+x.a,0));
  $("vtoday").innerHTML=L("Overdue",tk(od))+L("To do today",tk(dt))+L("Habits left today",S.habits.filter(x=>!x.days.includes(t)).map(x=>esc(x.x)))+L("Bedtime routine left",S.routine.filter((_,i)=>!rd.includes(i)).map(esc))+L("Coming up",tk(up))+`<section><h2>Today so far</h2><ul><li><span>Water</span><b>${S.water[t]||0} of 8</b></li><li><span>Mood</span><b>${S.moods[t]?EM[S.moods[t]-1]:"not set"}</b></li><li><span>Spent</span><b>${sp(t)}</b></li><li><span>Gratitude note</span><b>${S.notes[t]?"saved":"not yet"}</b></li></ul></section>`;
@@ -394,6 +398,25 @@ $("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),dl
  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//My Dashboard//EN","BEGIN:VEVENT","UID:dashboard-reminder-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M",rule,"SUMMARY:Log in to My Dashboard","DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to My Dashboard","TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"}));a.download="dashboard-reminder.ics";document.body.appendChild(a);a.click();a.remove()};
 function welcome(u,isNew){const w=$("welcome");w.textContent=(isNew?"Welcome, ":"Welcome back, ")+(u.username||"friend");w.style.transition="";w.style.opacity=1;w.style.animation="pop .5s ease both";w.hidden=false;setTimeout(()=>{w.style.transition="opacity .5s";w.style.opacity=0;setTimeout(()=>{w.hidden=true},500)},1300)}
+function exportData(pretty){
+ const m=v=>pretty?fmt(v):v,dates=new Set([...Object.keys(S.moods),...Object.keys(S.sleep),...Object.keys(S.water),...Object.keys(S.notes)]);
+ S.habits.forEach(h=>h.days.forEach(k=>dates.add(k)));S.tx.forEach(x=>x.d&&dates.add(x.d));
+ const sum=(a,t)=>a.filter(x=>x.t===t).reduce((s,x)=>s+x.a,0);
+ const log=[...dates].sort().reverse().map(k=>{const tx=S.tx.filter(x=>x.d===k);return{"Date":k,"Mood":S.moods[k]?S.moods[k]+" / 5":"","Sleep (hours)":S.sleep[k]?+S.sleep[k].toFixed(1):"","Water (glasses)":S.water[k]||"","Habits done":S.habits.filter(h=>h.days.includes(k)).map(h=>h.x).join(", "),"Gratitude note":S.notes[k]||"","Spent":sum(tx,"exp")?m(sum(tx,"exp")):"","Income":sum(tx,"inc")?m(sum(tx,"inc")):""}});
+ return{
+ "Summary":[{"Item":"Name","Value":S.name},{"Item":"Exported on","Value":new Date().toLocaleString()},{"Item":"Tasks done","Value":S.tasks.filter(x=>x.d).length+" of "+S.tasks.length},{"Item":"Goals","Value":S.goals.length},{"Item":"Habits","Value":S.habits.length},{"Item":"Total spent","Value":m(sum(S.tx,"exp"))},{"Item":"Total income","Value":m(sum(S.tx,"inc"))}],
+ "Tasks":S.tasks.map(x=>({"Task":x.x,"Due date":x.u||"","Due time":x.m||"","Status":x.d?"Done":isLate(x)?"Overdue":"To do"})),
+ "Goals":S.goals.map(g=>({"Goal":g.x,"Progress (%)":g.p})),
+ "Habits":S.habits.map(h=>({"Habit":h.x,"Current streak (days)":streak(h.days),"Total check-ins":h.days.length})),
+ "Daily log":log,
+ "Budget":S.tx.slice().reverse().map(x=>({"Date":x.d||"(no date)","Type":x.t==="inc"?"Income":"Expense","Category":x.c,"Amount":m(x.a)})),
+ "Ideas":S.ideas.map(x=>({"Idea":x}))}}
+function saveFile(name,type,data){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
+$("dlx").onclick=()=>{if(!window.XLSX){alert("The Excel tool could not load. Check your internet connection and reload the page.");return}const wb=XLSX.utils.book_new();Object.entries(exportData(false)).forEach(([n,r])=>{if(!r.length)return;const ws=XLSX.utils.json_to_sheet(r);ws["!cols"]=Object.keys(r[0]).map(k=>({wch:Math.min(50,Math.max(k.length,...r.map(o=>String(o[k]==null?"":o[k]).length))+2)}));XLSX.utils.book_append_sheet(wb,ws,n)});XLSX.writeFile(wb,"my-dashboard-"+today()+".xlsx");setCloud("Excel file downloaded")};
+$("dlr").onclick=()=>{const css="body{font:15px/1.5 system-ui,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#1b2733}h1{margin:0}h2{margin:28px 0 8px;border-bottom:2px solid #1f7a8c;padding-bottom:4px;color:#1f7a8c}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #d3dde6;padding:6px 8px;text-align:left;vertical-align:top}th{background:#eef3f7}@media print{h2{break-after:avoid}tr{break-inside:avoid}}";
+ const tb=r=>"<table><tr>"+Object.keys(r[0]).map(k=>"<th>"+esc(k)+"</th>").join("")+"</tr>"+r.map(o=>"<tr>"+Object.values(o).map(v=>"<td>"+esc(v)+"</td>").join("")+"</tr>").join("")+"</table>";
+ const html='<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Dashboard report</title><style>'+css+'</style></head><body><h1>My Dashboard report</h1><p>'+esc(S.name)+" \u00B7 exported "+esc(new Date().toLocaleString())+"</p>"+Object.entries(exportData(true)).map(([n,r])=>r.length?"<h2>"+esc(n)+"</h2>"+tb(r):"").join("")+'<p style="margin-top:28px;color:#5d6b78">Tip: press Ctrl+P and choose Save as PDF to make a PDF copy.</p></body></html>';
+ saveFile("my-dashboard-report-"+today()+".html","text/html",html);setCloud("Report downloaded")};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
  if(!u.username)u=await needName(u);
