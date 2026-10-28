@@ -23,7 +23,7 @@ header[data-tod="night"]{--hd1:#16213e;--hd2:#0f3460}
 header h1{color:var(--hdt)}
 header .ghost{color:var(--hdt);opacity:.85}
 header .ghost:hover{opacity:1;color:var(--hdt)}
-#who{color:#1b2733}
+#who{background:#ffffffe6!important;color:#1b2733}
 h1{font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;margin:0;font-weight:800;letter-spacing:-.02em}
 header p{margin:6px 0 0;color:inherit;opacity:.88}
 #name{border:0;border-bottom:2px dashed #ffffff88;background:transparent;color:inherit;font:inherit;width:7ch;min-width:3ch;padding:0}
@@ -523,7 +523,7 @@ show("dash");
 const PAL={ocean:["#1f7a8c","#d99a00","#4fb3c6","#f0b429"],forest:["#2f7d4f","#c98a1a","#5cc38a","#f0b429"],sunset:["#d2543a","#d98e1c","#ff8a6b","#ffc15e"],lavender:["#6b5bc4","#cf5f8f","#a89bff","#ff9fc4"],slate:["#3d5a80","#d98200","#8fb3de","#ffc857"]};
 {let c="";for(const[n,[a,b,da,db]]of Object.entries(PAL))c+=`:root[data-pal="${n}"]{--a:${a};--b:${b}}@media(prefers-color-scheme:dark){:root:not([data-theme="light"])[data-pal="${n}"]{--a:${da};--b:${db}}}:root[data-theme="dark"][data-pal="${n}"]{--a:${da};--b:${db}}`;const st=document.createElement("style");st.textContent=c;document.head.appendChild(st)}
 function applyPal(){const p=PAL[S.palette]?S.palette:"ocean";document.documentElement.dataset.pal=p;$("pals").innerHTML='<span style="color:var(--mute)">Color theme: <b style="color:var(--ink)">'+p[0].toUpperCase()+p.slice(1)+"</b></span>"+Object.entries(PAL).map(([n,c])=>`<button class="sw ${n===p?"on":""}" data-pal="${n}" aria-label="${n} theme" aria-pressed="${n===p}" style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></button>`).join("")}
-document.addEventListener("click",e=>{const b=e.target.closest("[data-pal]");if(!b)return;S.palette=b.dataset.pal;save();render()});
+document.addEventListener("click",e=>{const b=e.target.closest(".sw");if(!b)return;S.palette=b.dataset.pal;save();render()});
 const _r8=render;render=function(){_r8();applyPal()};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
