@@ -138,6 +138,13 @@ dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-fil
 .pw{position:relative}
 .pwt{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--a);font-weight:700;cursor:pointer;padding:6px 8px;border-radius:8px}
 .pwt:hover{background:color-mix(in srgb,var(--a) 12%,transparent)}
+header{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:820px){header{grid-template-columns:1fr minmax(270px,400px);align-items:end}}
+#hverse{background:#ffffff1f;border:1px solid #ffffff38;border-radius:16px;padding:14px 16px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);position:relative;z-index:1;animation:rise .6s ease backwards}
+#hverse .vt{margin:0 0 8px;opacity:1;font-size:.98rem;line-height:1.5}
+#hverse .vf{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+#hverse .vf small{opacity:.8}
+#hverse .vf .ghost{margin-left:auto;padding:2px 6px;font-size:.85rem}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#1f7a8c">
@@ -150,7 +157,6 @@ dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-fil
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
 <div id="welcome" hidden style="position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;text-align:center;padding:24px"></div>
 <dialog id="edlg"><form id="edform"><h2 id="edtitle"></h2><div id="edfields"></div><div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><button type="button" class="ghost" id="edcancel">Cancel</button><button class="btn">Save</button></div></form></dialog>
-<dialog id="vdlg"><p class="chartnote">Verse for today</p><p id="vtext" style="font-size:1.25rem;line-height:1.5;margin:0 0 10px"></p><p style="margin:0"><b id="vref"></b> <small class="chartnote">King James Version</small></p><div style="display:flex;gap:8px;justify-content:space-between;margin-top:18px"><button type="button" class="ghost" id="vmore">Another verse</button><button type="button" class="btn" id="vclose">Close</button></div></dialog>
 <dialog id="tour"><p class="chartnote" id="tstep"></p><h2 id="ttitle"></h2><p id="tbody" style="margin:0 0 6px"></p><div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px"><button type="button" class="ghost" id="tskip">Skip</button><button type="button" class="btn" id="tnext">Next</button></div></dialog>
 <div id="toast" hidden role="status" style="position:fixed;left:0;right:0;margin:auto;width:max-content;max-width:90vw;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:85;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600"></div>
 <div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.<small id="rverse" style="display:block;margin-top:4px"></small></span><button class="btn" id="rsnooze" style="background:transparent;color:#fff;border:2px solid #fff">Snooze 10 min</button><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
@@ -188,11 +194,14 @@ dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-fil
 </div>
 <main id="app" hidden>
 <header>
+<div class="hl">
 <p id="who" style="display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.85rem;margin:0 0 10px"></p>
 <h1><span id="hello">Good evening</span>, <input id="name" value="friend" aria-label="Your name" maxlength="16"></h1>
 <p id="date"></p>
 <p id="cloud" style="font-size:.85rem;margin:2px 0 0"></p>
-<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button> <button class="ghost" id="help" style="padding:0;margin-top:4px;margin-left:12px">Help</button> <button class="ghost" id="vbtn" style="padding:0;margin-top:4px;margin-left:12px">Verse</button> <button class="ghost" id="delacc" style="padding:0;margin-top:4px;margin-left:12px">Delete account</button>
+<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button> <button class="ghost" id="help" style="padding:0;margin-top:4px;margin-left:12px">Help</button> <button class="ghost" id="delacc" style="padding:0;margin-top:4px;margin-left:12px">Delete account</button>
+</div>
+<aside id="hverse" aria-label="Verse of the day"></aside>
 </header>
 <nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button><button class="tick" data-v="charts">Charts</button><button class="tick" data-v="cal">Calendar</button></nav>
 <nav id="bar" aria-label="Main views"></nav>
@@ -285,7 +294,7 @@ dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-fil
 <div class="grid" id="vcharts" hidden></div>
 <div class="grid" id="vcal" hidden></div>
 <div id="pals" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px"></div>
-<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><button class="btn" id="inst" hidden>Install app</button><label style="display:flex;gap:6px;align-items:center;color:var(--mute)">Daily verse <select id="vmode" aria-label="Daily verse popup" style="flex:none;width:auto"><option value="daily">once a day</option><option value="always">every time I open</option><option value="off">off</option></select></label><label style="display:flex;gap:6px;align-items:center;color:var(--mute)"><input type="checkbox" id="conf" checked style="flex:none;width:auto;padding:0"> Celebrations</label><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
+<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><button class="btn" id="inst" hidden>Install app</button><label style="display:flex;gap:6px;align-items:center;color:var(--mute)">Verse <select id="vmode" aria-label="Verse in the banner" style="flex:none;width:auto"><option value="daily">shown in the banner</option><option value="off">hidden</option></select></label><label style="display:flex;gap:6px;align-items:center;color:var(--mute)"><input type="checkbox" id="conf" checked style="flex:none;width:auto;padding:0"> Celebrations</label><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -401,7 +410,7 @@ function extra4(){
  const tk=a=>a.map(x=>esc(x.x)+(x.u?` <small>(${dueTxt(x)})</small>`:""));
  const L=(h,a)=>`<section><h2>${h}</h2>`+(a.length?`<ul>${a.map(x=>`<li><span>${x}</span></li>`).join("")}</ul>`:'<p class="empty">Nothing here.</p>')+"</section>";
  const sp=k=>fmt(S.tx.filter(x=>x.t==="exp"&&x.d===k).reduce((a,x)=>a+x.a,0));
- $("vtoday").innerHTML=scoreHTML()+verseHTML()+L("Overdue",tk(od))+L("To do today",tk(dt))+L("Habits left today",S.habits.filter(x=>!x.days.includes(t)).map(x=>esc(x.x)))+L("Bedtime routine left",S.routine.filter((_,i)=>!rd.includes(i)).map(esc))+L("Coming up",tk(up))+`<section><h2>Today so far</h2><ul><li><span>Water</span><b>${S.water[t]||0} of 8</b></li><li><span>Mood</span><b>${S.moods[t]?EM[S.moods[t]-1]:"not set"}</b></li><li><span>Spent</span><b>${sp(t)}</b></li><li><span>Gratitude note</span><b>${S.notes[t]?"saved":"not yet"}</b></li></ul></section>`;
+ $("vtoday").innerHTML=scoreHTML()+L("Overdue",tk(od))+L("To do today",tk(dt))+L("Habits left today",S.habits.filter(x=>!x.days.includes(t)).map(x=>esc(x.x)))+L("Bedtime routine left",S.routine.filter((_,i)=>!rd.includes(i)).map(esc))+L("Coming up",tk(up))+`<section><h2>Today so far</h2><ul><li><span>Water</span><b>${S.water[t]||0} of 8</b></li><li><span>Mood</span><b>${S.moods[t]?EM[S.moods[t]-1]:"not set"}</b></li><li><span>Spent</span><b>${sp(t)}</b></li><li><span>Gratitude note</span><b>${S.notes[t]?"saved":"not yet"}</b></li></ul></section>`;
  $("vweek").innerHTML=`<section class="wide"><h2>Day by day</h2><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:var(--mute)"><th>Day</th><th>Mood</th><th>Sleep</th><th>Water</th><th>Habits</th><th>Spent</th></tr>`+w.map(k=>`<tr style="border-top:1px solid var(--line)"><td>${new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric"})}</td><td>${S.moods[k]?EM[S.moods[k]-1]:"–"}</td><td>${S.sleep[k]?S.sleep[k].toFixed(1)+" h":"–"}</td><td>${S.water[k]||0}</td><td>${S.habits.filter(x=>x.days.includes(k)).length}/${S.habits.length}</td><td>${sp(k)}</td></tr>`).join("")+`</table></div></section><section class="wide"><h2>Totals</h2><ul>${$("review").innerHTML}</ul></section>`;
 }
 function agg(p){
@@ -639,14 +648,10 @@ var VERSES=[
 ["Psalm 121:1-2","I will lift up mine eyes unto the hills, from whence cometh my help. My help cometh from the LORD, which made heaven and earth.","n"]];
 var vOff=0;
 function pickVerse(o){const n=new Date(),h=n.getHours(),late=h>=19||h<4,pool=VERSES.filter(v=>late?v[2]==="n":v[2]!=="n"),doy=Math.floor((n-new Date(n.getFullYear(),0,0))/864e5);return pool[(doy*7+n.getFullYear()+o)%pool.length]}
-function showVerse(o){vOff=o;const v=pickVerse(o);$("vtext").textContent="“"+v[1]+"”";$("vref").textContent=v[0];if(!$("vdlg").open)$("vdlg").showModal()}
-function maybeVerse(){const m=S.verse||"daily";if(m==="off")return;let last="";try{last=localStorage.getItem("lastVerse")}catch(e){}if(m==="daily"&&last===today())return;try{localStorage.setItem("lastVerse",today())}catch(e){}showVerse(0)}
-function verseHTML(){if(!VERSES)return"";const v=pickVerse(0);return `<section class="wide"><h2>Verse for today <small>King James Version</small></h2><p style="font-size:1.1rem;margin:0 0 6px">“${esc(v[1])}”</p><b>${esc(v[0])}</b></section>`}
-$("vmore").onclick=()=>showVerse(vOff+1);
-$("vclose").onclick=()=>$("vdlg").close();
-$("vbtn").onclick=()=>showVerse(0);
-$("vmode").onchange=e=>{S.verse=e.target.value;save()};
-const _r10=render;render=function(){_r10();$("vmode").value=S.verse||"daily"};
+function headerVerse(){const el=$("hverse");if(S.verse==="off"){el.hidden=true;return}const v=pickVerse(vOff);el.hidden=false;el.innerHTML='<p class="vt">“'+esc(v[1])+'”</p><div class="vf"><b>'+esc(v[0])+'</b><small>King James Version</small><button type="button" class="ghost" id="vnext">Another verse</button></div>'}
+document.addEventListener("click",e=>{if(e.target.closest("#vnext")){vOff++;headerVerse()}});
+$("vmode").onchange=e=>{S.verse=e.target.value;save();headerVerse()};
+const _r10=render;render=function(){_r10();$("vmode").value=S.verse==="off"?"off":"daily";headerVerse()};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
  if(!u.username)u=await needName(u);
@@ -659,7 +664,7 @@ async function start(u,fresh){
  wins=null;ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
  if(d.data)setCloud("Saved to your account");
  if(fresh)welcome(u,fresh==="new");
- if(!S.toured)setTimeout(openTour,fresh?2000:800);else setTimeout(maybeVerse,fresh?2200:900);
+ if(!S.toured)setTimeout(openTour,fresh?2000:800);
 }
 const mode=m=>{$("resume").hidden=m!=="resume";$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="resume"?"Welcome back.":m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
 mode("login");
