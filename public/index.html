@@ -135,6 +135,9 @@ dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-fil
 #edform select,#edform input{width:100%}
 .pri{font-weight:700}.pri.high{color:var(--bad)}.pri.med{color:var(--b)}.pri.low{color:var(--mute)}
 #lform label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mute);flex:1;min-width:110px}
+.pw{position:relative}
+.pwt{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--a);font-weight:700;cursor:pointer;padding:6px 8px;border-radius:8px}
+.pwt:hover{background:color-mix(in srgb,var(--a) 12%,transparent)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#1f7a8c">
@@ -157,20 +160,28 @@ dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-fil
 <section>
 <form id="loginform" style="flex-direction:column;margin:0">
 <input id="lid" type="text" placeholder="Email or username" autocomplete="username" required aria-label="Email or username" style="flex:none">
-<input id="lpass" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password" style="flex:none">
-<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="showl" style="flex:none;width:auto;padding:0"> Show password</label>
+<div class="pw"><input id="lpass" type="password" placeholder="Password" autocomplete="current-password" required aria-label="Password" style="flex:none;width:100%;padding-right:70px"><button type="button" class="pwt" data-pw="lpass" aria-label="Show password">Show</button></div>
+<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="lremember" style="flex:none;width:auto;padding:0"> Keep me signed in on this device</label>
 <button class="btn" type="submit">Log in</button>
 <button class="ghost" id="tosignup" type="button">New here? Create an account</button>
 </form>
 <form id="signupform" style="flex-direction:column;margin:0" hidden>
 <input id="semail" type="email" placeholder="Email" autocomplete="email" required aria-label="Email" style="flex:none">
 <input id="sname" type="text" placeholder="Choose a username (3 to 20 characters)" autocomplete="username" maxlength="20" required aria-label="Username" style="flex:none">
-<input id="spass" type="password" placeholder="Password (at least 8 characters)" autocomplete="new-password" minlength="8" required aria-label="Password" style="flex:none">
-<input id="spass2" type="password" placeholder="Repeat password" autocomplete="new-password" minlength="8" required aria-label="Repeat password" style="flex:none">
-<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="shows" style="flex:none;width:auto;padding:0"> Show passwords</label>
+<div class="pw"><input id="spass" type="password" placeholder="Password (at least 8 characters)" autocomplete="new-password" minlength="8" required aria-label="Password" style="flex:none;width:100%;padding-right:70px"><button type="button" class="pwt" data-pw="spass" aria-label="Show password">Show</button></div>
+<div class="pw"><input id="spass2" type="password" placeholder="Repeat password" autocomplete="new-password" minlength="8" required aria-label="Repeat password" style="flex:none;width:100%;padding-right:70px"><button type="button" class="pwt" data-pw="spass2" aria-label="Show password">Show</button></div>
+<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="sremember" style="flex:none;width:auto;padding:0"> Keep me signed in on this device</label>
 <button class="btn" type="submit">Create account</button>
 <button class="ghost" id="tologin" type="button">Already have an account? Log in</button>
 </form>
+<div id="resume" hidden>
+<p style="margin:0 0 12px;font-size:1.05rem">Signed in as <b id="rname"></b></p>
+<div style="display:flex;flex-direction:column;gap:10px">
+<button class="btn" id="rcont" type="button">Continue to my dashboard</button>
+<button class="ghost" id="rother" type="button">Not you? Log in as someone else</button>
+<label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="rauto" style="flex:none;width:auto;padding:0"> Sign in automatically next time (skip this screen)</label>
+</div>
+</div>
 <p id="amsg" role="status" style="color:var(--mute);margin:10px 0 0"></p>
 </section>
 </div>
@@ -599,23 +610,30 @@ async function start(u,fresh){
  if(fresh)welcome(u,fresh==="new");
  if(!S.toured)setTimeout(openTour,fresh?2000:800);
 }
-const mode=m=>{$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
+const mode=m=>{$("resume").hidden=m!=="resume";$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="resume"?"Welcome back.":m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
 mode("login");
 $("tosignup").onclick=()=>mode("signup");$("tologin").onclick=()=>mode("login");
-$("showl").onchange=e=>{$("lpass").type=e.target.checked?"text":"password"};
-$("shows").onchange=e=>{const t=e.target.checked?"text":"password";$("spass").type=t;$("spass2").type=t};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;const i=$(b.dataset.pw),show=i.type==="password";i.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password")});
 function fail(m){amsg(m);const c=document.querySelector("#auth section");c.classList.remove("shake");void c.offsetWidth;c.classList.add("shake")}
 const busy=(f,on)=>f.querySelector(".btn").classList.toggle("busy",on);
-$("loginform").onsubmit=async e=>{e.preventDefault();const f=e.target;amsg("");busy(f,1);try{await start((await api("POST","/api/login",{email:$("lid").value.trim(),password:$("lpass").value})).user,"back")}catch(x){fail(x.message)}busy(f,0)};
+$("loginform").onsubmit=async e=>{e.preventDefault();const f=e.target;amsg("");busy(f,1);try{await start((await api("POST","/api/login",{email:$("lid").value.trim(),password:$("lpass").value,remember:$("lremember").checked})).user,"back")}catch(x){fail(x.message)}busy(f,0)};
 $("signupform").onsubmit=async e=>{e.preventDefault();const f=e.target,email=$("semail").value.trim(),username=$("sname").value.trim(),password=$("spass").value;
  if(!/^[A-Za-z0-9_.-]{3,20}$/.test(username))return fail("Username must be 3 to 20 letters, numbers, dots, dashes or underscores.");
  if(password.length<8)return fail("Password must be at least 8 characters.");
  if(password!==$("spass2").value)return fail("The two passwords do not match.");
- amsg("");busy(f,1);try{await start((await api("POST","/api/signup",{email,username,password})).user,"new")}catch(x){fail(x.message)}busy(f,0)};
+ amsg("");busy(f,1);try{await start((await api("POST","/api/signup",{email,username,password,remember:$("sremember").checked})).user,"new")}catch(x){fail(x.message)}busy(f,0)};
 $("delacc").onclick=async()=>{const p=prompt("This permanently deletes your account and all your data. Type your password to confirm.");if(!p)return;try{await api("POST","/api/delete-account",{password:p});alert("Account deleted.");location.reload()}catch(x){alert(x.message)}};
 $("logout").onclick=async()=>{uid=null;ready=false;try{await api("POST","/api/logout")}catch(e){}location.reload()};
 $("chpw").onclick=async()=>{const o=prompt("Type your current password");if(!o)return;const n=prompt("Type your new password (at least 8 characters)");if(!n)return;try{await api("POST","/api/change-password",{oldPassword:o,newPassword:n});alert("Password changed.")}catch(x){alert(x.message)}};
-(async()=>{try{start((await api("GET","/api/me")).user)}catch(e){}})();
+let autoLogin=false;try{autoLogin=localStorage.getItem("autoLogin")==="1"}catch(e){}
+$("rauto").checked=autoLogin;
+$("rauto").onchange=e=>{try{localStorage.setItem("autoLogin",e.target.checked?"1":"0")}catch(x){}};
+(async()=>{try{const u=(await api("GET","/api/me")).user;
+ if(autoLogin){start(u);return}
+ $("rname").textContent=u.username||u.email;mode("resume");
+ $("rcont").onclick=async()=>{const b=$("rcont");b.classList.add("busy");try{await start(u,"back")}catch(x){fail(x.message)}b.classList.remove("busy")};
+ $("rother").onclick=async()=>{try{await api("POST","/api/logout")}catch(x){}mode("login")};
+}catch(e){}})();
 </script>
 </body>
 </html>
