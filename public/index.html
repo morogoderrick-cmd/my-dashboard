@@ -129,13 +129,25 @@ td,th{padding:7px 8px}
 .sw{width:30px;height:30px;border-radius:50%;border:3px solid var(--card);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0;transition:transform .15s}
 .sw:hover{transform:scale(1.12)}
 .sw.on{box-shadow:0 0 0 3px var(--a)}
+dialog{border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--ink);padding:22px;max-width:440px;width:calc(100% - 32px);box-shadow:0 24px 60px #0005}
+dialog::backdrop{background:#0009;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+#edform{display:block;margin:0}
+#edform select,#edform input{width:100%}
+.pri{font-weight:700}.pri.high{color:var(--bad)}.pri.med{color:var(--b)}.pri.low{color:var(--mute)}
+#lform label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mute);flex:1;min-width:110px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#1f7a8c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
 <button class="ghost theme" id="theme" aria-label="Switch light or dark theme">Theme</button>
 <div id="welcome" hidden style="position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:clamp(1.6rem,6vw,2.6rem);font-weight:800;text-align:center;padding:24px"></div>
+<dialog id="edlg"><form id="edform"><h2 id="edtitle"></h2><div id="edfields"></div><div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><button type="button" class="ghost" id="edcancel">Cancel</button><button class="btn">Save</button></div></form></dialog>
+<dialog id="tour"><p class="chartnote" id="tstep"></p><h2 id="ttitle"></h2><p id="tbody" style="margin:0 0 6px"></p><div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px"><button type="button" class="ghost" id="tskip">Skip</button><button type="button" class="btn" id="tnext">Next</button></div></dialog>
 <div id="toast" hidden role="status" style="position:fixed;left:0;right:0;margin:auto;width:max-content;max-width:90vw;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:85;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600"></div>
 <div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.</span><button class="btn" id="rsnooze" style="background:transparent;color:#fff;border:2px solid #fff">Snooze 10 min</button><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
 <div id="abg" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -168,7 +180,7 @@ td,th{padding:7px 8px}
 <h1><span id="hello">Good evening</span>, <input id="name" value="friend" aria-label="Your name" maxlength="16"></h1>
 <p id="date"></p>
 <p id="cloud" style="font-size:.85rem;margin:2px 0 0"></p>
-<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button> <button class="ghost" id="delacc" style="padding:0;margin-top:4px;margin-left:12px">Delete account</button>
+<button class="ghost" id="logout" style="padding:0;margin-top:4px">Log out</button> <button class="ghost" id="chpw" style="padding:0;margin-top:4px;margin-left:12px">Change password</button> <button class="ghost" id="help" style="padding:0;margin-top:4px;margin-left:12px">Help</button> <button class="ghost" id="delacc" style="padding:0;margin-top:4px;margin-left:12px">Delete account</button>
 </header>
 <nav id="tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap"><button class="tick" data-v="dash">All tools</button><button class="tick" data-v="today">Today</button><button class="tick" data-v="week">This week</button><button class="tick" data-v="month">This month</button><button class="tick" data-v="year">This year</button><button class="tick" data-v="years">All years</button><button class="tick" data-v="charts">Charts</button><button class="tick" data-v="cal">Calendar</button></nav>
 <nav id="bar" aria-label="Main views"></nav>
@@ -177,7 +189,7 @@ td,th{padding:7px 8px}
 <section>
 <h2>Top tasks <small id="tcount"></small></h2>
 <ul id="tasks"></ul>
-<form id="tform"><input id="tin" placeholder="Add a task for tomorrow" aria-label="New task" required><input type="date" id="tdue" aria-label="Due date" style="flex:none;width:auto"><input type="time" id="ttime" aria-label="Due time" style="flex:none;width:auto"><button class="btn">Add task</button></form>
+<form id="tform"><input id="tin" placeholder="Add a task for tomorrow" aria-label="New task" required><input type="date" id="tdue" aria-label="Due date" style="flex:none;width:auto"><input type="time" id="ttime" aria-label="Due time" style="flex:none;width:auto"><select id="tpri" aria-label="Priority" style="flex:none;width:auto"><option value="">Priority</option><option value="high">High</option><option value="med">Medium</option><option value="low">Low</option></select><select id="trep" aria-label="Repeat" style="flex:none;width:auto"><option value="">No repeat</option><option value="daily">Every day</option><option value="weekly">Every week</option><option value="monthly">Every month</option></select><button class="btn">Add task</button></form>
 </section>
 <section>
 <h2>Goals <small>tap + or − to update</small></h2>
@@ -241,6 +253,9 @@ td,th{padding:7px 8px}
 <div class="left" id="leftbox">Left<strong id="left">0</strong></div>
 </div>
 <div id="cats"></div>
+<div id="limits"></div>
+<details style="margin:10px 0"><summary style="cursor:pointer;color:var(--a);font-weight:600">Set monthly limits</summary><form id="lform" style="margin-top:8px"><label>Food<input type="number" min="0" step="any" id="lim_Food" placeholder="No limit"></label><label>Transport<input type="number" min="0" step="any" id="lim_Transport" placeholder="No limit"></label><label>Bills<input type="number" min="0" step="any" id="lim_Bills" placeholder="No limit"></label><label>Fun<input type="number" min="0" step="any" id="lim_Fun" placeholder="No limit"></label><label>Other<input type="number" min="0" step="any" id="lim_Other" placeholder="No limit"></label><button class="btn">Save limits</button></form></details>
+<div id="savings"></div>
 <form id="bform">
 <select id="btype" aria-label="Type"><option value="exp">Expense</option><option value="inc">Income</option></select>
 <select id="bcat" aria-label="Category"><option>Food</option><option>Transport</option><option>Bills</option><option>Fun</option><option>Other</option></select>
@@ -258,11 +273,11 @@ td,th{padding:7px 8px}
 <div class="grid" id="vcharts" hidden></div>
 <div class="grid" id="vcal" hidden></div>
 <div id="pals" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px"></div>
-<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><label style="display:flex;gap:6px;align-items:center;color:var(--mute)"><input type="checkbox" id="conf" checked style="flex:none;width:auto;padding:0"> Celebrations</label><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
+<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn" id="dlx">Download Excel</button><button class="btn" id="dlr">Download report</button><button class="btn" id="dl">Backup file</button><button class="btn" id="inst" hidden>Install app</button><label style="display:flex;gap:6px;align-items:center;color:var(--mute)"><input type="checkbox" id="conf" checked style="flex:none;width:auto;padding:0"> Celebrations</label><button class="btn" id="rs">Restore from file</button><input id="cur" placeholder="Currency, e.g. KSh" aria-label="Currency" style="flex:none;width:150px"><input type="file" id="rf" accept=".json,application/json" hidden></p>
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6],tone:"beep",url:""},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
+const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",savings:null,limits:{},reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6],tone:"beep",url:""},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
 let S=DEF();
 let uid=null,ready=false,tm;
 const api=async(m,u,b)=>{const r=await fetch(u,{method:m,headers:b?{"Content-Type":"application/json"}:{},body:b?JSON.stringify(b):undefined,credentials:"same-origin"});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j};
@@ -274,6 +289,9 @@ const fmt=n=>(S.cur?S.cur+" ":"")+n.toLocaleString(undefined,{maximumFractionDig
 const hmNow=()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
 const isLate=t=>!t.d&&t.u&&(t.u<today()||(t.u===today()&&t.m&&t.m<hmNow()));
 const dueTxt=t=>t.u?t.u+(t.m?" at "+t.m:""):"";
+const PN={high:"High",med:"Medium",low:"Low"},RP={daily:"every day",weekly:"every week",monthly:"every month"},PO=[["","None"],["high","High"],["med","Medium"],["low","Low"]],RO=[["","Does not repeat"],["daily","Every day"],["weekly","Every week"],["monthly","Every month"]],CATS=["Food","Transport","Bills","Fun","Other"];
+const nextDue=x=>{const d=new Date((x.u||today())+"T12:00");for(let i=0;i<800;i++){if(x.rp==="daily")d.setDate(d.getDate()+1);else if(x.rp==="weekly")d.setDate(d.getDate()+7);else d.setMonth(d.getMonth()+1);if(key(d)>today())return key(d)}return key(d)};
+
 const h=new Date().getHours();
 $("hello").textContent=h<4?"Good night":h<12?"Good morning":h<17?"Good afternoon":h<21?"Good evening":"Good night";
 document.querySelector("header").dataset.tod=h<4?"night":h<12?"morning":h<17?"afternoon":h<21?"evening":"night";
@@ -283,16 +301,16 @@ $("name").oninput=e=>{S.name=e.target.value;save()};
 if(S.theme)document.documentElement.dataset.theme=S.theme;
 $("theme").onclick=()=>{const dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==="dark":matchMedia("(prefers-color-scheme:dark)").matches;S.theme=dark?"light":"dark";document.documentElement.dataset.theme=S.theme;save()};
 function render(){
- $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${isLate(t)?"var(--bad)":"var(--mute)"}">${isLate(t)?"overdue ":"due "}${dueTxt(t)}</small>`:""}</span><button class="ghost" data-dt="${i}" aria-label="Delete task">Remove</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
+ $("tasks").innerHTML=S.tasks.length?S.tasks.map((t,i)=>`<li class="${t.d?"done":""}"><input type="checkbox" ${t.d?"checked":""} data-t="${i}" aria-label="Done"><span>${esc(t.x)}${t.u?` <small style="color:${isLate(t)?"var(--bad)":"var(--mute)"}">${isLate(t)?"overdue ":"due "}${dueTxt(t)}</small>`:""}${t.p?` <small class="pri ${t.p}">${PN[t.p]} priority</small>`:""}${t.rp?` <small>repeats ${RP[t.rp]}</small>`:""}</span><button class="ghost" data-et="${i}" aria-label="Edit task">Edit</button><button class="ghost" data-dt="${i}" aria-label="Delete task">Remove</button></li>`).join(""):'<li class="empty">No tasks yet. Add the one thing you want done first tomorrow.</li>';
  $("tcount").textContent=S.tasks.filter(t=>t.d).length+" of "+S.tasks.length+" done";
- $("goals").innerHTML=S.goals.length?S.goals.map((g,i)=>`<div class="goal"><div class="row"><b>${esc(g.x)}</b><span>${g.p}%</span><button class="ghost" data-gm="${i}" aria-label="Decrease">−</button><button class="ghost" data-gp="${i}" aria-label="Increase">+</button><button class="ghost" data-dg="${i}" aria-label="Delete goal">Remove</button></div><div class="bar"><i style="width:${g.p}%"></i></div></div>`).join(""):'<div class="empty">No goals yet. Add one you want to move forward this month.</div>';
+ $("goals").innerHTML=S.goals.length?S.goals.map((g,i)=>`<div class="goal"><div class="row"><b>${esc(g.x)}</b><span>${g.p}%</span><button class="ghost" data-gm="${i}" aria-label="Decrease">−</button><button class="ghost" data-gp="${i}" aria-label="Increase">+</button><button class="ghost" data-eg="${i}" aria-label="Edit goal">Edit</button><button class="ghost" data-dg="${i}" aria-label="Delete goal">Remove</button></div><div class="bar"><i style="width:${g.p}%"></i></div></div>`).join(""):'<div class="empty">No goals yet. Add one you want to move forward this month.</div>';
  const inc=S.tx.filter(t=>t.t==="inc").reduce((a,t)=>a+t.a,0),exp=S.tx.filter(t=>t.t==="exp").reduce((a,t)=>a+t.a,0);
  $("inc").textContent=fmt(inc);$("exp").textContent=fmt(exp);$("left").textContent=fmt(inc-exp);
  $("leftbox").className=inc-exp<0?"neg":"left";
  const by={};S.tx.filter(t=>t.t==="exp").forEach(t=>by[t.c]=(by[t.c]||0)+t.a);
  const mx=Math.max(1,...Object.values(by));
  $("cats").innerHTML=Object.keys(by).length?Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="cat"><span>${esc(c)}</span><div class="bar"><i style="width:${v/mx*100}%"></i></div><em>${fmt(v)}</em></div>`).join(""):'<div class="empty">Add an expense to see where your money goes.</div>';
- $("tx").innerHTML=S.tx.slice().reverse().map((t,j)=>{const i=S.tx.length-1-j;return `<li><span>${esc(t.c)}</span><span class="amt">${t.t==="inc"?"+":"−"}${fmt(t.a)}</span><button class="ghost" data-dx="${i}" aria-label="Delete entry">Remove</button></li>`}).join("");
+ $("tx").innerHTML=S.tx.slice().reverse().map((t,j)=>{const i=S.tx.length-1-j;return `<li><span>${esc(t.c)}</span><span class="amt">${t.t==="inc"?"+":"−"}${fmt(t.a)}</span><button class="ghost" data-ex="${i}" aria-label="Edit entry">Edit</button><button class="ghost" data-dx="${i}" aria-label="Delete entry">Remove</button></li>`}).join("");
 }
 document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
  if(d.dt!==undefined)S.tasks.splice(+d.dt,1);
@@ -302,16 +320,16 @@ document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
  else if(d.gm!==undefined)S.goals[+d.gm].p=Math.max(0,S.goals[+d.gm].p-10);
  else return;
  save();render()});
-$("tasks").addEventListener("change",e=>{const i=e.target.dataset.t;if(i===undefined)return;S.tasks[+i].d=e.target.checked;S.tasks[+i].dd=e.target.checked?today():"";save();render()});
-$("tform").onsubmit=e=>{e.preventDefault();S.tasks.push({x:$("tin").value.trim(),d:false,u:$("tdue").value||($("ttime").value?today():""),m:$("ttime").value});$("tdue").value="";$("ttime").value="";$("tin").value="";save();render()};
+$("tasks").addEventListener("change",e=>{const i=e.target.dataset.t;if(i===undefined)return;const x=S.tasks[+i];x.d=e.target.checked;x.dd=x.d?today():"";if(x.d&&x.rp&&!x.spawned){x.spawned=true;const u=nextDue(x);S.tasks.push({x:x.x,d:false,u,m:x.m||"",p:x.p||"",rp:x.rp});toast("Next one is due "+u+".")}save();render()});
+$("tform").onsubmit=e=>{e.preventDefault();const rp=$("trep").value,tm=$("ttime").value;S.tasks.push({x:$("tin").value.trim(),d:false,u:$("tdue").value||((tm||rp)?today():""),m:tm,p:$("tpri").value,rp});$("tdue").value="";$("ttime").value="";$("tpri").value="";$("trep").value="";$("tin").value="";save();render()};
 $("gform").onsubmit=e=>{e.preventDefault();S.goals.push({x:$("gin").value.trim(),p:0});$("gin").value="";save();render()};
-$("bform").onsubmit=e=>{e.preventDefault();const a=parseFloat($("bamt").value);if(!(a>0))return;S.tx.push({t:$("btype").value,c:$("btype").value==="inc"?"Income":$("bcat").value,a,d:today()});$("bamt").value="";save();render()};
+$("bform").onsubmit=e=>{e.preventDefault();const a=parseFloat($("bamt").value);if(!(a>0))return;S.tx.push({t:$("btype").value,c:$("btype").value==="inc"?"Income":$("bcat").value,a,d:today()});$("bamt").value="";save();render();limitWarn()};
 const key=d=>d.toLocaleDateString("en-CA");
 const today=()=>key(new Date());
 function streak(days){let n=0,d=new Date();if(!days.includes(key(d)))d.setDate(d.getDate()-1);while(days.includes(key(d))){n++;d.setDate(d.getDate()-1)}return n}
 function extra(){
  const t=today();
- $("habits").innerHTML=S.habits.length?S.habits.map((x,i)=>{const on=x.days.includes(t);return `<li><span>${esc(x.x)}</span><b class="streak">${streak(x.days)} day${streak(x.days)===1?"":"s"}</b><button class="tick ${on?"on":""}" data-hd="${i}" aria-pressed="${on}">${on?"Done":"Mark done"}</button><button class="ghost" data-hx="${i}" aria-label="Delete habit">Remove</button></li>`}).join(""):'<li class="empty">No habits yet. Add one you want to repeat every day.</li>';
+ $("habits").innerHTML=S.habits.length?S.habits.map((x,i)=>{const on=x.days.includes(t);return `<li><span>${esc(x.x)}</span><b class="streak">${streak(x.days)} day${streak(x.days)===1?"":"s"}</b><button class="tick ${on?"on":""}" data-hd="${i}" aria-pressed="${on}">${on?"Done":"Mark done"}</button><button class="ghost" data-eh="${i}" aria-label="Edit habit">Edit</button><button class="ghost" data-hx="${i}" aria-label="Delete habit">Remove</button></li>`}).join(""):'<li class="empty">No habits yet. Add one you want to repeat every day.</li>';
  const ks=Object.keys(S.notes).sort().reverse().slice(0,5);
  $("ntoday").textContent=S.notes[t]?"today saved":"nothing saved today";
  $("notes").innerHTML=ks.length?ks.map(k=>`<li class="note"><span><small>${esc(new Date(k+"T12:00").toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}))}</small>${esc(S.notes[k])}</span></li>`).join(""):'<li class="empty">Write one good thing from today before you sleep.</li>';
@@ -352,7 +370,7 @@ function extra3(){
  $("routine").innerHTML=S.routine.map((x,i)=>`<li><input type="checkbox" data-r="${i}" ${rd.includes(i)?"checked":""} aria-label="${esc(x)}"><span>${esc(x)}</span></li>`).join("");
  const sl=lastN(7).map(k=>S.sleep[k]).filter(Boolean),sv=S.sleep[t];
  $("sleepinfo").textContent=(sv?"Logged today: "+sv.toFixed(1)+" h. ":"")+(sl.length?"7-day average: "+(sl.reduce((a,b)=>a+b,0)/sl.length).toFixed(1)+" h":"No sleep logged yet.");
- $("ideas").innerHTML=S.ideas.length?S.ideas.map((x,i)=>`<li><span>${esc(x)}</span><button class="ghost" data-ix="${i}" aria-label="Delete idea">Remove</button></li>`).join(""):'<li class="empty">Empty your head here. Add a thought or idea.</li>';
+ $("ideas").innerHTML=S.ideas.length?S.ideas.map((x,i)=>`<li><span>${esc(x)}</span><button class="ghost" data-ei="${i}" aria-label="Edit note">Edit</button><button class="ghost" data-ix="${i}" aria-label="Delete idea">Remove</button></li>`).join(""):'<li class="empty">Empty your head here. Add a thought or idea.</li>';
 }
 const _r3=render;render=function(){_r3();extra3()};
 document.addEventListener("click",e=>{const d=e.target.dataset;if(!d)return;
@@ -448,8 +466,8 @@ function exportData(pretty){
  const sum=(a,t)=>a.filter(x=>x.t===t).reduce((s,x)=>s+x.a,0);
  const log=[...dates].sort().reverse().map(k=>{const tx=S.tx.filter(x=>x.d===k);return{"Date":k,"Mood":S.moods[k]?S.moods[k]+" / 5":"","Sleep (hours)":S.sleep[k]?+S.sleep[k].toFixed(1):"","Water (glasses)":S.water[k]||"","Habits done":S.habits.filter(h=>h.days.includes(k)).map(h=>h.x).join(", "),"Gratitude note":S.notes[k]||"","Spent":sum(tx,"exp")?m(sum(tx,"exp")):"","Income":sum(tx,"inc")?m(sum(tx,"inc")):""}});
  return{
- "Summary":[{"Item":"Name","Value":S.name},{"Item":"Exported on","Value":new Date().toLocaleString()},{"Item":"Tasks done","Value":S.tasks.filter(x=>x.d).length+" of "+S.tasks.length},{"Item":"Goals","Value":S.goals.length},{"Item":"Habits","Value":S.habits.length},{"Item":"Total spent","Value":m(sum(S.tx,"exp"))},{"Item":"Total income","Value":m(sum(S.tx,"inc"))}],
- "Tasks":S.tasks.map(x=>({"Task":x.x,"Due date":x.u||"","Due time":x.m||"","Status":x.d?"Done":isLate(x)?"Overdue":"To do"})),
+ "Summary":[{"Item":"Name","Value":S.name},{"Item":"Exported on","Value":new Date().toLocaleString()},{"Item":"Tasks done","Value":S.tasks.filter(x=>x.d).length+" of "+S.tasks.length},{"Item":"Goals","Value":S.goals.length},{"Item":"Habits","Value":S.habits.length},{"Item":"Total spent","Value":m(sum(S.tx,"exp"))},{"Item":"Total income","Value":m(sum(S.tx,"inc"))},...(S.savings?[{"Item":"Savings goal","Value":S.savings.x+": "+m(S.savings.s)+" of "+m(S.savings.t)}]:[])],
+ "Tasks":S.tasks.map(x=>({"Task":x.x,"Due date":x.u||"","Due time":x.m||"","Status":x.d?"Done":isLate(x)?"Overdue":"To do","Priority":PN[x.p]||"","Repeats":RP[x.rp]||""})),
  "Goals":S.goals.map(g=>({"Goal":g.x,"Progress (%)":g.p})),
  "Habits":S.habits.map(h=>({"Habit":h.x,"Current streak (days)":streak(h.days),"Total check-ins":h.days.length})),
  "Daily log":log,
@@ -472,7 +490,7 @@ function dayScore(k){const t=k||today(),parts=[],rel=S.tasks.filter(x=>x.d?x.dd=
 function scoreHTML(){const s=dayScore(),c=326.7,off=c*(1-s.pct/100),msg=s.pct>=100?"Perfect day!":s.pct>=70?"Great going":s.pct>=40?"Keep it up":"A fresh start";
  return `<section class="wide" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><svg width="130" height="130" viewBox="0 0 130 130" role="img" aria-label="Today's score ${s.pct} percent"><circle cx="65" cy="65" r="52" fill="none" stroke="var(--line)" stroke-width="12"/><circle class="ring" cx="65" cy="65" r="52" fill="none" stroke="var(--a)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${c}" style="stroke-dashoffset:${off}" transform="rotate(-90 65 65)"/><text x="65" y="72" text-anchor="middle" font-size="26" font-weight="800" fill="var(--ink)">${s.pct}%</text></svg><div style="flex:1;min-width:200px"><h2 style="margin:0 0 6px">Today's score <small>${msg}</small></h2><ul>${s.parts.map(p=>`<li><span>${p[0]}</span><b>${p[2]}</b></li>`).join("")}</ul></div></section>`}
 let wins=null;
-function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;t.style.animation="none";void t.offsetWidth;t.style.animation="rise .4s ease both";clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true},3400)}
+function toast(m,act){const t=$("toast");t.textContent=m;if(act){const b=document.createElement("button");b.textContent=act.label;b.style.cssText="margin-left:14px;background:none;border:0;color:inherit;font:inherit;font-weight:800;text-decoration:underline;cursor:pointer";b.onclick=()=>{act.fn();t.hidden=true};t.appendChild(b)}t.hidden=false;t.style.animation="none";void t.offsetWidth;t.style.animation="rise .4s ease both";clearTimeout(toast.h);toast.h=setTimeout(()=>{t.hidden=true},act?7000:3400)}
 function confetti(){const c=document.createElement("canvas");c.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:90";c.width=innerWidth;c.height=innerHeight;document.body.appendChild(c);const x=c.getContext("2d"),cols=["#1f7a8c","#d99a00","#e4572e","#7b61ff","#2e9e5b","#ff7aa2"],ps=Array.from({length:150},()=>({x:c.width/2+(Math.random()-.5)*140,y:c.height*.35,vx:(Math.random()-.5)*15,vy:-Math.random()*13-4,s:Math.random()*7+5,r:Math.random()*6,vr:(Math.random()-.5)*.4,c:cols[Math.random()*6|0]}));let f=0;(function go(){x.clearRect(0,0,c.width,c.height);ps.forEach(p=>{p.vy+=.35;p.x+=p.vx;p.y+=p.vy;p.vx*=.99;p.r+=p.vr;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.globalAlpha=Math.max(0,1-f/150);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/3,p.s,p.s*.6);x.restore()});if(++f<150)requestAnimationFrame(go);else c.remove()})()}
 function celebrate(m){toast(m);confetti()}
 function checkWins(){const sc=dayScore(),tAll=sc.rel.length>0&&sc.rel.every(x=>x.d),g=new Set(S.goals.filter(x=>x.p>=100).map(x=>x.x)),now={tAll,p100:sc.pct>=100,g};
@@ -525,6 +543,48 @@ const PAL={ocean:["#1f7a8c","#d99a00","#4fb3c6","#f0b429"],forest:["#2f7d4f","#c
 function applyPal(){const p=PAL[S.palette]?S.palette:"ocean";document.documentElement.dataset.pal=p;$("pals").innerHTML='<span style="color:var(--mute)">Color theme: <b style="color:var(--ink)">'+p[0].toUpperCase()+p.slice(1)+"</b></span>"+Object.entries(PAL).map(([n,c])=>`<button class="sw ${n===p?"on":""}" data-pal="${n}" aria-label="${n} theme" aria-pressed="${n===p}" style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></button>`).join("")}
 document.addEventListener("click",e=>{const b=e.target.closest(".sw");if(!b)return;S.palette=b.dataset.pal;save();render()});
 const _r8=render;render=function(){_r8();applyPal()};
+let undoState=null,edSave=null;
+function undo(){if(!undoState)return;S=Object.assign(DEF(),JSON.parse(undoState));undoState=null;wins=null;save();render()}
+document.addEventListener("click",e=>{const d=e.target.dataset;if(d&&["dt","dg","dx","hx","ix","svd"].some(k=>d[k]!==undefined)){undoState=JSON.stringify(S);setTimeout(()=>toast("Removed.",{label:"Undo",fn:undo}),0)}},true);
+function openEdit(title,fields,onSave){undoState=JSON.stringify(S);$("edtitle").textContent=title;
+ $("edfields").innerHTML=fields.map((f,i)=>`<label for="ef${i}" style="display:block;margin:10px 0 4px;font-size:.85rem;color:var(--mute)">${f.l}</label>`+(f.o?`<select id="ef${i}">${f.o.map(([v,t])=>`<option value="${esc(v)}" ${String(f.v)===v?"selected":""}>${esc(t)}</option>`).join("")}</select>`:`<input id="ef${i}" type="${f.t||"text"}" value="${esc(f.v==null?"":f.v)}" ${f.a||""}>`)).join("");
+ edSave=()=>onSave(fields.map((f,i)=>$("ef"+i).value));$("edlg").showModal()}
+$("edform").onsubmit=e=>{e.preventDefault();if(edSave)edSave();$("edlg").close();save();render();toast("Changes saved.",{label:"Undo",fn:undo})};
+$("edcancel").onclick=()=>$("edlg").close();
+document.addEventListener("click",e=>{const b=e.target.closest("[data-et],[data-eg],[data-eh],[data-ei],[data-ex],[data-sve],[data-svd]");if(!b)return;const d=b.dataset;
+ if(d.et!==undefined){const t=S.tasks[+d.et];openEdit("Edit task",[{l:"Task",v:t.x,a:"required"},{l:"Due date",t:"date",v:t.u||""},{l:"Due time",t:"time",v:t.m||""},{l:"Priority",v:t.p||"",o:PO},{l:"Repeats",v:t.rp||"",o:RO}],v=>{if(v[0].trim())t.x=v[0].trim();t.u=v[1];t.m=v[2];t.p=v[3];t.rp=v[4]})}
+ else if(d.eg!==undefined){const g=S.goals[+d.eg];openEdit("Edit goal",[{l:"Goal",v:g.x,a:"required"},{l:"Progress (%)",t:"number",v:g.p,a:'min="0" max="100"'}],v=>{if(v[0].trim())g.x=v[0].trim();g.p=Math.max(0,Math.min(100,parseInt(v[1])||0))})}
+ else if(d.eh!==undefined){const h=S.habits[+d.eh];openEdit("Edit habit",[{l:"Habit",v:h.x,a:"required"}],v=>{if(v[0].trim())h.x=v[0].trim()})}
+ else if(d.ei!==undefined){openEdit("Edit note",[{l:"Idea or note",v:S.ideas[+d.ei],a:"required"}],v=>{if(v[0].trim())S.ideas[+d.ei]=v[0].trim()})}
+ else if(d.ex!==undefined){const x=S.tx[+d.ex],cl=x.t==="inc"?[["Income","Income"]]:(CATS.includes(x.c)?CATS:[x.c,...CATS]).map(c=>[c,c]);openEdit("Edit entry",[{l:"Amount",t:"number",v:x.a,a:'min="0" step="any" required'},{l:"Category",v:x.c,o:cl},{l:"Date",t:"date",v:x.d||""}],v=>{const a=parseFloat(v[0]);if(a>0)x.a=a;x.c=v[1];x.d=v[2]})}
+ else if(d.sve!==undefined){const s=S.savings;openEdit("Edit savings goal",[{l:"Goal name",v:s.x,a:"required"},{l:"Target amount",t:"number",v:s.t,a:'min="1" step="any" required'},{l:"Saved so far",t:"number",v:s.s,a:'min="0" step="any" required'}],v=>{if(v[0].trim())s.x=v[0].trim();s.t=parseFloat(v[1])||s.t;s.s=parseFloat(v[2])||0})}
+ else if(d.svd!==undefined){S.savings=null;save();render()}});
+function limitWarn(){const x=S.tx[S.tx.length-1];if(!x||x.t!=="exp")return;const l=S.limits[x.c];if(!(l>0))return;const ym=today().slice(0,7),v=S.tx.filter(y=>y.t==="exp"&&y.c===x.c&&y.d&&y.d.startsWith(ym)).reduce((a,y)=>a+y.a,0),p=Math.round(v/l*100);if(p>=100)toast("Over budget: "+x.c+" is at "+p+"% of its monthly limit.");else if(p>=80)toast("Careful: "+x.c+" is at "+p+"% of its monthly limit.")}
+function extra9(){const ym=today().slice(0,7),sp={};S.tx.filter(x=>x.t==="exp"&&x.d&&x.d.startsWith(ym)).forEach(x=>sp[x.c]=(sp[x.c]||0)+x.a);
+ $("limits").innerHTML=CATS.filter(c=>S.limits[c]>0).map(c=>{const l=S.limits[c],v=sp[c]||0,p=Math.round(v/l*100),col=p>=100?"var(--bad)":p>=70?"var(--b)":"var(--a)";return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.9rem"><span>${c} limit this month</span><b>${fmt(v)} of ${fmt(l)} (${p}%)</b></div><div class="bar"><i style="width:${Math.min(p,100)}%;background:${col}"></i></div></div>`}).join("");
+ CATS.forEach(c=>{const el=$("lim_"+c);if(el&&document.activeElement!==el)el.value=S.limits[c]||""});
+ const sv=S.savings;
+ if(sv){const pct=Math.min(100,Math.round(sv.s/sv.t*100)),rem=sv.t-sv.s;$("savings").innerHTML=`<div style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b>Savings goal: ${esc(sv.x)}</b><span>${fmt(sv.s)} of ${fmt(sv.t)} (${pct}%)</span></div><div class="bar" style="margin:6px 0"><i style="width:${pct}%"></i></div><p class="chartnote" style="margin:0 0 6px">${rem>0?fmt(rem)+" to go.":"Goal reached."}</p><form id="svform" style="margin:0"><input id="svamt" type="number" min="0" step="any" placeholder="Amount to add" aria-label="Savings amount" required><button class="btn">Add savings</button><button class="ghost" type="button" data-sve="1">Edit goal</button><button class="ghost" type="button" data-svd="1">Remove goal</button></form></div>`}
+ else if(!$("svnew"))$("savings").innerHTML=`<div style="margin-top:16px"><b>Savings goal</b><form id="svnew" style="margin:6px 0 0"><input id="svname" placeholder="What are you saving for?" aria-label="Savings goal name" required><input id="svtarget" type="number" min="1" step="any" placeholder="Target amount" aria-label="Target amount" required><button class="btn">Set goal</button></form></div>`;}
+document.addEventListener("submit",e=>{const id=e.target.id;
+ if(id==="svnew"){e.preventDefault();S.savings={x:$("svname").value.trim(),t:parseFloat($("svtarget").value),s:0};save();render()}
+ else if(id==="svform"){e.preventDefault();const a=parseFloat($("svamt").value);if(!(a>0))return;const was=S.savings.s>=S.savings.t;S.savings.s+=a;save();render();if(!was&&S.savings.s>=S.savings.t&&S.confetti!==false)celebrate("Savings goal reached: "+S.savings.x)}
+ else if(id==="lform"){e.preventDefault();CATS.forEach(c=>S.limits[c]=parseFloat($("lim_"+c).value)||0);save();render();toast("Limits saved.")}});
+const _r9=render;render=function(){_r9();extra9()};
+const TOUR=[["Welcome","This is your private dashboard. Everything you add is saved to your account automatically, so you can open it on any device."],["Tools and Today","All tools is where you add tasks, goals, habits, mood, sleep, water, notes and your budget. Today shows what is left to do and your daily score."],["Your progress","The Charts, Calendar, This week, This month and This year tabs show how you are doing over time. You can download an Excel file or a report at any time."],["Make it yours","Set a daily reminder with your own sound, pick a color theme at the bottom of the page, and install the app on your home screen. Tap Help in the top banner to see this guide again."]];
+let ts=0;
+function tourShow(){const s=TOUR[ts];$("tstep").textContent="Step "+(ts+1)+" of "+TOUR.length;$("ttitle").textContent=s[0];$("tbody").textContent=s[1];$("tnext").textContent=ts===TOUR.length-1?"Done":"Next"}
+function openTour(){ts=0;tourShow();if(!$("tour").open)$("tour").showModal()}
+$("tnext").onclick=()=>{if(ts<TOUR.length-1){ts++;tourShow()}else $("tour").close()};
+$("tskip").onclick=()=>$("tour").close();
+$("tour").addEventListener("close",()=>{if(!S.toured){S.toured=true;save()}});
+$("help").onclick=openTour;
+let dip=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();dip=e;$("inst").hidden=false});
+window.addEventListener("appinstalled",()=>{$("inst").hidden=true});
+$("inst").onclick=async()=>{if(dip){dip.prompt();await dip.userChoice;dip=null;$("inst").hidden=true}else alert("To install on an iPhone or iPad: tap the Share button in Safari, then Add to Home Screen.")};
+if(/iphone|ipad|ipod/i.test(navigator.userAgent)&&!navigator.standalone)$("inst").hidden=false;
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")===0)navigator.serviceWorker.register("/sw.js").catch(()=>{});
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
  if(!u.username)u=await needName(u);
@@ -537,6 +597,7 @@ async function start(u,fresh){
  wins=null;ready=true;$("name").value=S.name;if(S.theme)document.documentElement.dataset.theme=S.theme;render();
  if(d.data)setCloud("Saved to your account");
  if(fresh)welcome(u,fresh==="new");
+ if(!S.toured)setTimeout(openTour,fresh?2000:800);
 }
 const mode=m=>{$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
 mode("login");
