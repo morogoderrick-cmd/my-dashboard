@@ -145,6 +145,8 @@ header{display:grid;grid-template-columns:1fr;gap:18px}
 #hverse .vf{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 #hverse .vf small{opacity:.8}
 #hverse .vf .ghost{margin-left:auto;padding:2px 6px;font-size:.85rem}
+#hverse .vlabel{margin:0 0 6px;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;opacity:.8}
+#hverse .vx{margin-top:12px;padding-top:10px;border-top:1px solid #ffffff3a}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#1f7a8c">
@@ -449,7 +451,7 @@ let song=null;
 function stopSong(){if(song){try{song.pause()}catch(e){}song=null}}
 async function startSong(){stopSong();const r=S.reminder;let src=null;if(r.tone==="file"){try{const f=await idbGet("ring:"+uid);if(f&&f.blob)src=URL.createObjectURL(f.blob)}catch(e){}}else if(r.tone==="url"&&r.url)src=r.url;if(!src)return false;try{const a=new Audio(src);a.loop=true;await a.play();song=a;return true}catch(e){return false}}
 function stopRing(hide){clearInterval(ringTimer);ringTimer=null;stopSong();document.title=baseTitle;if(hide)$("rbanner").hidden=true}
-function ring(){unlock();$("rbanner").hidden=false;{const vv=pickVerse(0);$("rverse").textContent=vv[0]+": "+vv[1]}document.title="Check-in time!";const k=S.reminder.tone||"beep",useSong=k==="file"||k==="url";let fb=!useSong;
+function ring(){unlock();$("rbanner").hidden=false;{const vv=todayVerse();$("rverse").textContent=vv[0]+": "+vv[1]}document.title="Check-in time!";const k=S.reminder.tone||"beep",useSong=k==="file"||k==="url";let fb=!useSong;
  const go=()=>{if(fb)tone(useSong?"beep":k);try{navigator.vibrate&&navigator.vibrate([300,150,300])}catch(e){}};
  if(useSong)startSong().then(ok=>{if(!ok){fb=true;tone("beep")}});
  go();clearInterval(ringTimer);let n=0;ringTimer=setInterval(()=>{if(++n>(useSong?19:9))stopRing(false);else go()},3000);
@@ -647,9 +649,14 @@ var VERSES=[
 ["Psalm 30:5","For his anger endureth but a moment; in his favour is life: weeping may endure for a night, but joy cometh in the morning.","n"],
 ["Psalm 121:1-2","I will lift up mine eyes unto the hills, from whence cometh my help. My help cometh from the LORD, which made heaven and earth.","n"]];
 var vOff=0;
-function pickVerse(o){const n=new Date(),h=n.getHours(),late=h>=19||h<4,pool=VERSES.filter(v=>late?v[2]==="n":v[2]!=="n"),doy=Math.floor((n-new Date(n.getFullYear(),0,0))/864e5);return pool[(doy*7+n.getFullYear()+o)%pool.length]}
-function headerVerse(){const el=$("hverse");if(S.verse==="off"){el.hidden=true;return}const v=pickVerse(vOff);el.hidden=false;el.innerHTML='<p class="vt">“'+esc(v[1])+'”</p><div class="vf"><b>'+esc(v[0])+'</b><small>King James Version</small><button type="button" class="ghost" id="vnext">Another verse</button></div>'}
-document.addEventListener("click",e=>{if(e.target.closest("#vnext")){vOff++;headerVerse()}});
+const doyOf=n=>Math.floor((n-new Date(n.getFullYear(),0,0))/864e5);
+function todayVerse(n){n=n||new Date();return VERSES[(doyOf(n)*7+n.getFullYear())%VERSES.length]}
+function extraVerse(k){const n=new Date(),t=todayVerse(n),late=n.getHours()>=19||n.getHours()<4;let pool=VERSES.filter(v=>v!==t&&(!late||v[2]==="n"));if(pool.length<4)pool=VERSES.filter(v=>v!==t);return pool[(doyOf(n)*5+k*3)%pool.length]}
+function headerVerse(){const el=$("hverse");if(S.verse==="off"){el.hidden=true;return}const v=todayVerse(),blk=(l,x)=>'<p class="vlabel">'+l+'</p><p class="vt">“'+esc(x[1])+'”</p>';
+ let h=blk("Today’s verse",v)+'<div class="vf"><b>'+esc(v[0])+'</b><small>King James Version</small>'+(vOff?"":'<button type="button" class="ghost" id="vnext">Another verse</button>')+'</div>';
+ if(vOff){const x=extraVerse(vOff);h+='<div class="vx">'+blk("Another verse",x)+'<div class="vf"><b>'+esc(x[0])+'</b><button type="button" class="ghost" id="vnext">Next verse</button><button type="button" class="ghost" id="vhide">Hide</button></div></div>'}
+ el.hidden=false;el.innerHTML=h}
+document.addEventListener("click",e=>{if(e.target.closest("#vnext")){vOff++;headerVerse()}else if(e.target.closest("#vhide")){vOff=0;headerVerse()}});
 $("vmode").onchange=e=>{S.verse=e.target.value;save();headerVerse()};
 const _r10=render;render=function(){_r10();$("vmode").value=S.verse==="off"?"off":"daily";headerVerse()};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
