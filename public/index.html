@@ -147,6 +147,9 @@ header{display:grid;grid-template-columns:1fr;gap:18px}
 #hverse .vf .ghost{margin-left:auto;padding:2px 6px;font-size:.85rem}
 #hverse .vlabel{margin:0 0 6px;font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;font-weight:700;opacity:.8}
 #hverse .vx{margin-top:12px;padding-top:10px;border-top:1px solid #ffffff3a}
+#hverse .enc{margin:10px 0 0;padding-top:10px;border-top:1px solid #ffffff3a;font-size:.92rem;line-height:1.45;opacity:1}
+#hverse .vbtns{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}
+#hverse .vbtns .ghost{padding:2px 6px;font-size:.85rem}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#1f7a8c">
@@ -649,13 +652,13 @@ var VERSES=[
 ["Psalm 30:5","For his anger endureth but a moment; in his favour is life: weeping may endure for a night, but joy cometh in the morning.","n"],
 ["Psalm 121:1-2","I will lift up mine eyes unto the hills, from whence cometh my help. My help cometh from the LORD, which made heaven and earth.","n"]];
 var vOff=0;
+var ENC=["Small steps count. Do one thing well today.","You do not have to do everything today. Start with one task.","Progress, not perfection.","Rest is part of the work. Sleep well tonight.","You have already come further than you think.","Be kind to yourself. A hard day does not erase your effort.","Today is a fresh page. Write something good on it.","Every habit you keep is a promise you keep to yourself.","Finish one thing, then celebrate it.","Your future self will thank you for what you do today.","Keep going. Slow progress is still progress.","You are allowed to take it one hour at a time.","Courage is doing the next small thing, even when you feel unsure.","Good things grow from steady, ordinary days.","Rest tonight, and begin again tomorrow with strength.","You are not behind. You are on your own path.","Gratitude turns what we have into enough.","Look at how many small wins you already have this week.","A calm mind makes better choices. Take a deep breath.","Do what you can today, and let that be enough.","Your effort matters, even when nobody sees it.","Mistakes are lessons in disguise. Learn and move on.","Start small. Starting is the hardest part.","You have overcome hard days before, and you will do it again.","Drink some water, stretch, and take your next step.","Believe in the person you are becoming.","Make today count, one task at a time.","Consistency beats intensity. Show up again today.","Your goals are worth the patience they need.","Celebrate how far you have come, not only how far you have to go.","It is okay to ask for help. Strong people do.","Choose peace over worry for the next hour.","Plant a little today and you will harvest later.","You were made for more than just getting by. Keep reaching.","A clear plan makes a lighter heart. Check your list.","End the day knowing you did your best with what you had.","Every sunrise is a new chance.","You are capable, you are loved, and you are enough.","Take a moment tonight to thank someone.","Tomorrow is a gift. Rest well and meet it with hope."];
 const doyOf=n=>Math.floor((n-new Date(n.getFullYear(),0,0))/864e5);
 function todayVerse(n){n=n||new Date();return VERSES[(doyOf(n)*7+n.getFullYear())%VERSES.length]}
 function extraVerse(k){const n=new Date(),t=todayVerse(n),late=n.getHours()>=19||n.getHours()<4;let pool=VERSES.filter(v=>v!==t&&(!late||v[2]==="n"));if(pool.length<4)pool=VERSES.filter(v=>v!==t);return pool[(doyOf(n)*5+k*3)%pool.length]}
-function headerVerse(){const el=$("hverse");if(S.verse==="off"){el.hidden=true;return}const v=todayVerse(),blk=(l,x)=>'<p class="vlabel">'+l+'</p><p class="vt">“'+esc(x[1])+'”</p>';
- let h=blk("Today’s verse",v)+'<div class="vf"><b>'+esc(v[0])+'</b><small>King James Version</small>'+(vOff?"":'<button type="button" class="ghost" id="vnext">Another verse</button>')+'</div>';
- if(vOff){const x=extraVerse(vOff);h+='<div class="vx">'+blk("Another verse",x)+'<div class="vf"><b>'+esc(x[0])+'</b><button type="button" class="ghost" id="vnext">Next verse</button><button type="button" class="ghost" id="vhide">Hide</button></div></div>'}
- el.hidden=false;el.innerHTML=h}
+function headerVerse(){const el=$("hverse");if(S.verse==="off"){el.hidden=true;return}
+ const v=vOff?extraVerse(vOff):todayVerse(),n=new Date(),en=ENC[(doyOf(n)*3+n.getFullYear()+vOff)%ENC.length];
+ el.hidden=false;el.innerHTML='<p class="vlabel">'+(vOff?"Another verse":"Today’s verse")+'</p><p class="vt">“'+esc(v[1])+'”</p><div class="vf"><b>'+esc(v[0])+'</b><small>King James Version</small></div><p class="enc"><b>Encouragement:</b> '+esc(en)+'</p><div class="vbtns"><button type="button" class="ghost" id="vnext">Next verse</button>'+(vOff?'<button type="button" class="ghost" id="vhide">Back to today’s verse</button>':"")+"</div>"}
 document.addEventListener("click",e=>{if(e.target.closest("#vnext")){vOff++;headerVerse()}else if(e.target.closest("#vhide")){vOff=0;headerVerse()}});
 $("vmode").onchange=e=>{S.verse=e.target.value;save();headerVerse()};
 const _r10=render;render=function(){_r10();$("vmode").value=S.verse==="off"?"off":"daily";headerVerse()};
