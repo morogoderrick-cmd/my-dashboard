@@ -27,9 +27,10 @@ const prod = process.env.NODE_ENV === "production";
 const DUMMY = bcrypt.hashSync("not-a-real-password", 10);
 const wrap = (fn) => (q, s) => fn(q, s).catch((e) => { console.error(e); s.status(500).json({ error: "Server error" }); });
 
-const give = (s, u) =>
-  s.cookie(COOKIE, jwt.sign({ id: u.id }, JWT_SECRET, { expiresIn: "30d" }), {
-    httpOnly: true, sameSite: "lax", secure: prod, maxAge: 30 * 864e5,
+// remember=true: the login lasts 30 days. Otherwise it ends when the browser is closed.
+const give = (s, u, remember) =>
+  s.cookie(COOKIE, jwt.sign({ id: u.id }, JWT_SECRET, { expiresIn: remember ? "30d" : "1d" }), {
+    httpOnly: true, sameSite: "lax", secure: prod, ...(remember ? { maxAge: 30 * 864e5 } : {}),
   });
 const getUid = (q) => {
   const c = (q.headers.cookie || "").split(";").map((x) => x.trim()).find((x) => x.startsWith(COOKIE + "="));
@@ -68,7 +69,7 @@ app.post("/api/signup", wrap(async (q, s) => {
     return s.status(409).json({ error: "That username is taken. Try another." });
   try {
     const r = await pool.query("insert into users(email,username,pass_hash) values($1,$2,$3) returning id,email,username", [email, uname, await bcrypt.hash(pw, 10)]);
-    give(s, r.rows[0]); s.json({ user: r.rows[0] });
+    give(s, r.rows[0], q.body.remember === true); s.json({ user: r.rows[0] });
   } catch (e) {
     if (e.code === "23505") return s.status(409).json({ error: /username/.test(e.constraint || e.detail || "") ? "That username is taken. Try another." : "That email already has an account. Log in instead." });
     throw e;
@@ -82,7 +83,7 @@ app.post("/api/login", wrap(async (q, s) => {
   const u = r.rows[0];
   const ok = await bcrypt.compare(String(q.body.password || ""), u ? u.pass_hash : DUMMY);
   if (!u || !ok) return s.status(401).json({ error: "Wrong email or password." });
-  give(s, u); s.json({ user: { id: u.id, email: u.email, username: u.username } });
+  give(s, u, q.body.remember === true); s.json({ user: { id: u.id, email: u.email, username: u.username } });
 }));
 
 app.post("/api/logout", (q, s) => { s.clearCookie(COOKIE); s.json({ ok: true }); });
