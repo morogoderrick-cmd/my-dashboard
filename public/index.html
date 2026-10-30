@@ -28,8 +28,9 @@ h1{font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;margin:0;font-weight:800;le
 header p{margin:6px 0 0;color:inherit;opacity:.88}
 #name{border:0;border-bottom:2px dashed #ffffff88;background:transparent;color:inherit;font:inherit;width:7ch;min-width:3ch;padding:0}
 #name:focus{outline:none;border-color:#fff}
-.grid{display:grid;gap:16px;grid-template-columns:1fr}
-@media(min-width:760px){.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1/-1}}
+.grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.grid>*{min-width:0}
+@media(min-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-column:1/-1}}
 section{background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--card) 95%,var(--a)));border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:0 1px 2px #10182808,0 10px 28px -10px #1018281f}
 #vdash>section{animation:rise .5s ease backwards;transition:transform .2s ease,box-shadow .2s ease}
 #vdash>section:hover{transform:translateY(-2px);box-shadow:0 1px 2px #10182808,0 16px 34px -10px #10182830}
@@ -110,7 +111,7 @@ td,th{padding:7px 8px}
 @keyframes ringin{from{stroke-dashoffset:326.7}}
 @keyframes grow{from{transform:scaleY(0)}}
 .cbar{transform-box:fill-box;transform-origin:bottom;animation:grow .6s ease both}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
 .cal .hd{text-align:center;color:var(--mute);font-size:.8rem}
 .day{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:var(--card);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.8rem;padding:2px;transition:transform .15s}
 .day:hover{transform:scale(1.06)}
@@ -165,6 +166,22 @@ textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:
 #hverse[data-style="solid"] .ghost,#hverse[data-style="solid"] a{color:#1f4e5f}
 #hverse[data-style="minimal"]{background:none;border:0;padding:0;-webkit-backdrop-filter:none;backdrop-filter:none}
 #hverse .vbtns{align-items:center}
+#rsound label{display:flex;flex-wrap:wrap;gap:6px;align-items:center;max-width:100%}
+#rsound select,#rsound input{max-width:100%}
+#rurl{min-width:0!important;flex:1 1 200px}
+@media(max-width:640px),(pointer:coarse){
+.ghost{min-height:40px;padding:8px 12px!important}
+header .hl .ghost{margin-left:0!important;margin-top:0!important;padding:8px 14px 8px 0!important}
+.goal .row .ghost{min-width:40px}
+input[type=checkbox]{width:24px;height:24px}
+.tick{min-height:40px}
+.btn{min-height:44px}
+}
+.day{min-width:0;overflow:hidden}
+li{flex-wrap:wrap}
+li>span{min-width:0;flex:1 1 140px}
+.goal .row{flex-wrap:wrap}
+.goal .row b{flex:1 1 140px;min-width:0}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#1f7a8c">
@@ -183,10 +200,10 @@ textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:
 <label for="vs_size" class="dl">Text size</label><select id="vs_size"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select>
 <label for="vs_style" class="dl">Box style</label><select id="vs_style"><option value="glass">Glass</option><option value="solid">Solid</option><option value="minimal">Minimal</option></select>
 <label class="dl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="vs_enc" style="flex:none;width:auto;padding:0"> Show the encouragement line</label>
-<label for="vs_notice" class="dl">Translation notice, shown under your own verses</label><input id="vs_notice" placeholder="For example: Good News Bible, American Bible Society" style="width:100%">
+<label for="vs_notice" class="dl">Translation notice, shown under your own verses</label><input id="vs_notice" placeholder="Optional note shown under your own verses" style="width:100%">
 <h2 style="margin-top:18px">My verses</h2>
 <ul id="vs_list"></ul>
-<form id="vs_form"><input id="vs_ref" placeholder="Reference, for example Psalm 23:1" required><input id="vs_trans" placeholder="Translation name, for example Good News Bible"><textarea id="vs_text" rows="3" placeholder="Type the verse as it appears in your Bible" required></textarea><button class="btn">Add verse</button></form>
+<form id="vs_form"><input id="vs_ref" placeholder="Reference, for example Psalm 23:1" required><input id="vs_trans" placeholder="Translation name (optional)"><textarea id="vs_text" rows="3" placeholder="Type the verse as it appears in your Bible" required></textarea><button class="btn">Add verse</button></form>
 <div style="display:flex;justify-content:flex-end;margin-top:16px"><button type="button" class="btn" id="vs_done">Done</button></div></dialog>
 <div id="toast" hidden role="status" style="position:fixed;left:0;right:0;margin:auto;width:max-content;max-width:90vw;bottom:calc(24px + env(safe-area-inset-bottom,0px));z-index:85;background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600"></div>
 <div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.<small id="rverse" style="display:block;margin-top:4px"></small></span><button class="btn" id="rsnooze" style="background:transparent;color:#fff;border:2px solid #fff">Snooze 10 min</button><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
@@ -685,7 +702,7 @@ function extraVerse(k){const n=new Date(),P=versePool(),t=todayVerse(n),late=n.g
 function headerVerse(){const el=$("hverse"),b=S.vbox||{};if(S.verse==="off"){el.hidden=true;return}
  el.dataset.style=b.style||"glass";el.dataset.size=b.size||"m";
  const v=vOff?extraVerse(vOff):todayVerse(),n=new Date(),en=ENC[(doyOf(n)*3+n.getFullYear()+vOff)%ENC.length],own=v[3]!=="King James Version";
- el.hidden=false;el.innerHTML='<p class="vlabel">'+(vOff?"Another verse":"Today’s verse")+'</p><p class="vt">“'+esc(v[1])+'”</p><div class="vf"><b>'+esc(v[0])+'</b><small>'+esc(v[3])+'</small></div>'+(own&&b.notice?'<small class="vn">'+esc(b.notice)+'</small>':"")+(b.enc!==false?'<p class="enc"><b>Encouragement:</b> '+esc(en)+'</p>':"")+'<div class="vbtns"><a href="https://www.biblegateway.com/passage/?search='+encodeURIComponent(v[0])+'&version=GNT" target="_blank" rel="noopener">Read in Good News Bible</a><button type="button" class="ghost" id="vcust">Customize</button><button type="button" class="ghost" id="vnext">Next verse</button>'+(vOff?'<button type="button" class="ghost" id="vhide">Back to today’s verse</button>':"")+"</div>"}
+ el.hidden=false;el.innerHTML='<p class="vlabel">'+(vOff?"Another verse":"Today’s verse")+'</p><p class="vt">“'+esc(v[1])+'”</p><div class="vf"><b>'+esc(v[0])+'</b><small>'+esc(v[3])+'</small></div>'+(own&&b.notice?'<small class="vn">'+esc(b.notice)+'</small>':"")+(b.enc!==false?'<p class="enc"><b>Encouragement:</b> '+esc(en)+'</p>':"")+'<div class="vbtns"><button type="button" class="ghost" id="vcust">Customize</button><button type="button" class="ghost" id="vnext">Next verse</button>'+(vOff?'<button type="button" class="ghost" id="vhide">Back to today’s verse</button>':"")+"</div>"}
 function vsList(){const L=S.myVerses||[];$("vs_list").innerHTML=L.length?L.map((x,i)=>`<li><span><b>${esc(x.r)}</b> <small style="color:var(--mute)">${esc(x.v||"")}</small><br>${esc(x.t)}</span><button class="ghost" type="button" data-vsd="${i}">Remove</button></li>`).join(""):'<li class="empty">No verses yet. Add your favorites below.</li>'}
 function openVset(){const b=S.vbox||{};$("vs_src").value=b.src||"kjv";$("vs_size").value=b.size||"m";$("vs_style").value=b.style||"glass";$("vs_enc").checked=b.enc!==false;$("vs_notice").value=b.notice||"";vsList();if(!$("vset").open)$("vset").showModal()}
 function vsSet(k,v){S.vbox=Object.assign({enc:true,src:"kjv",size:"m",style:"glass",notice:""},S.vbox||{});S.vbox[k]=v;vOff=0;save();render()}
