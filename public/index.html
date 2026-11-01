@@ -325,6 +325,11 @@ header.hero-photo::before{content:"";position:absolute;left:0;right:0;top:200px;
 .mb i{display:block;width:100%;background:var(--b);border-radius:4px 4px 0 0;min-height:3px;opacity:.85}
 .mb small{color:var(--mute);font-size:.7rem}.mb.t small{color:var(--ink);font-weight:700}.mb.t i{opacity:1}
 .hprev{height:84px;border-radius:12px;border:1px solid var(--line);background-size:cover;margin-top:10px}
+header.hero-photo{background:#0b1226!important}
+#herobg{display:none;position:absolute;left:0;right:0;top:0;bottom:0;background-size:cover;background-position:center;background-repeat:no-repeat;z-index:0;pointer-events:none;transition:transform .15s}
+header.hero-photo #herobg{display:block}
+header.hero-photo::before{display:none!important}
+@media(max-width:759px){header.hero-photo #herobg{bottom:auto;height:300px;-webkit-mask-image:linear-gradient(#000 62%,transparent);mask-image:linear-gradient(#000 62%,transparent)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#0a0f1f">
@@ -386,6 +391,7 @@ header.hero-photo::before{content:"";position:absolute;left:0;right:0;top:200px;
 </div>
 <main id="app" hidden>
 <header>
+<div id="herobg" aria-hidden="true"></div>
 <div class="htop"><div class="hsw"><input id="hs" type="search" placeholder="Search anything..." aria-label="Search"><div id="sres" hidden></div></div><span id="hthslot"></span><span id="avatar" aria-hidden="true"></span></div>
 <div class="hl">
 <p id="who" style="display:inline-flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.85rem;margin:0 0 10px"></p>
@@ -500,7 +506,7 @@ header.hero-photo::before{content:"";position:absolute;left:0;right:0;top:200px;
 <div class="srow"><span id="avprev" class="avp" aria-hidden="true"></span><button class="tick" id="avpick" type="button">Choose profile photo</button><button class="ghost" id="avdel" type="button" hidden>Remove</button></div>
 <div class="srow"><button class="tick" id="hepick" type="button">Choose banner photo</button><button class="ghost" id="hedel" type="button" hidden>Remove</button></div>
 <div id="hprev" class="hprev" hidden></div><p id="phstat" class="chartnote" style="margin-top:8px"></p>
-<label class="sl2">Banner photo position<input type="range" id="hepos" min="0" max="100" value="30"></label>
+<label class="sl2">Banner zoom: <b id="hezv">100%</b> <small>(smaller on the left, bigger on the right)</small><input type="range" id="hezoom" min="60" max="250" step="5" value="100"></label><div class="srow"><button class="ghost" id="hezr" type="button">Reset zoom</button></div>
 <input type="file" id="avfile" accept="image/*" hidden><input type="file" id="hefile" accept="image/*" hidden></section>
 <section><h2>Phone options</h2><p class="chartnote">Make the dashboard comfortable on a small screen.</p>
 <div class="srow"><label>Text size <select id="ph_text" style="flex:none;width:auto"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></label></div>
@@ -513,7 +519,7 @@ header.hero-photo::before{content:"";position:absolute;left:0;right:0;top:200px;
 </main>
 <script>
 const $=id=>document.getElementById(id);
-const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",savings:null,limits:{},focus:{},avatar:"",hero:"",heroPos:40,phone:{text:"m",compact:false,haptic:true,wake:true,bar:["home","today","charts","cal"]},avatar:"",vbox:{enc:true,src:"kjv",size:"m",style:"glass",font:"serif",color:"gold",notice:""},myVerses:[],reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6],tone:"beep",url:""},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
+const DEF=()=>({name:"friend",tasks:[],goals:[],tx:[],habits:[],notes:{},moods:{},water:{},sleep:{},rdone:{},ideas:[],cur:"",savings:null,limits:{},focus:{},avatar:"",hero:"",heroPos:40,heroZoom:100,phone:{text:"m",compact:false,haptic:true,wake:true,bar:["home","today","charts","cal"]},avatar:"",vbox:{enc:true,src:"kjv",size:"m",style:"glass",font:"serif",color:"gold",notice:""},myVerses:[],reminder:{time:"20:00",on:false,days:[0,1,2,3,4,5,6],tone:"beep",url:""},routine:["Phone on charge, away from bed","Brush teeth","Set alarm","Check tomorrow's top task"],theme:""});
 let S=DEF();
 let uid=null,ready=false,tm;
 const api=async(m,u,b)=>{const r=await fetch(u,{method:m,headers:b?{"Content-Type":"application/json"}:{},body:b?JSON.stringify(b):undefined,credentials:"same-origin"});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||"Something went wrong");return j};
@@ -991,18 +997,22 @@ async function shrink(f,max,sq,q,cap){const d0=await decode(f);let w=d0.w,h=d0.h
  let d=c.toDataURL("image/jpeg",q);for(let qq=q-.1;d.length>cap&&qq>.25;qq-=.1)d=c.toDataURL("image/jpeg",qq);
  if(d.length>cap){const c2=document.createElement("canvas");c2.width=Math.round(cw*.7);c2.height=Math.round(ch*.7);c2.getContext("2d").drawImage(c,0,0,c2.width,c2.height);d=c2.toDataURL("image/jpeg",.6)}
  if(!d||d.indexOf("data:image")!==0)throw new Error("Could not process that picture.");return d}
-function applyPhotos(){const a=$("avatar"),h=document.querySelector("header");
+function applyPhotos(){const a=$("avatar"),h=document.querySelector("header"),hb=$("herobg");
  if(S.avatar){a.style.backgroundImage=`url("${S.avatar}")`;a.style.backgroundSize="cover";a.style.backgroundPosition="center";a.textContent=""}else{a.style.backgroundImage="";a.textContent=((S.name||"U").trim()[0]||"U").toUpperCase()}
  const pv=$("avprev");if(pv){pv.style.backgroundImage=S.avatar?`url("${S.avatar}")`:"";pv.textContent=S.avatar?"":((S.name||"U").trim()[0]||"U").toUpperCase()}
- if(S.hero){const p=S.heroPos==null?40:S.heroPos;h.style.backgroundImage=`linear-gradient(90deg,#070b1ae6 0%,#070b1a99 38%,#070b1a22 100%),url("${S.hero}")`;h.style.backgroundPosition="center,center "+p+"%";h.style.backgroundSize="cover";$("hepos").value=p}else{h.style.backgroundImage="";h.style.backgroundPosition="";h.style.backgroundSize=""}
- h.classList.toggle("hero-photo",!!S.hero);const hp=$("hprev");if(hp){hp.hidden=!S.hero;hp.style.backgroundImage=S.hero?`url("${S.hero}")`:"";hp.style.backgroundPosition="center "+(S.heroPos==null?40:S.heroPos)+"%"}$("hepos").disabled=!S.hero;$("avdel").hidden=!S.avatar;$("hedel").hidden=!S.hero}
+ const zm=S.heroZoom||100,p=S.heroPos==null?40:S.heroPos;
+ if(S.hero){hb.style.backgroundImage=`linear-gradient(90deg,#070b1ae6 0%,#070b1a99 38%,#070b1a22 100%),url("${S.hero}")`;hb.style.transformOrigin="center "+p+"%";hb.style.transform="scale("+zm/100+")";h.classList.add("hero-photo")}else{hb.style.backgroundImage="";hb.style.transform="";h.classList.remove("hero-photo")}
+ h.style.backgroundImage="";h.style.backgroundPosition="";h.style.backgroundSize="";
+ const hp=$("hprev");if(hp){hp.hidden=!S.hero;hp.style.backgroundImage=S.hero?`url("${S.hero}")`:"";hp.style.backgroundSize=zm+"% auto";hp.style.backgroundPosition="center "+p+"%"}
+ const zs=$("hezoom");zs.disabled=!S.hero;if(document.activeElement!==zs)zs.value=zm;$("hezv").textContent=zm+"%";$("hezr").disabled=!S.hero;$("avdel").hidden=!S.avatar;$("hedel").hidden=!S.hero}
 $("avpick").onclick=()=>$("avfile").click();$("hepick").onclick=()=>$("hefile").click();
 const phs=t=>{const el=$("phstat");if(el)el.textContent=t};
 $("avfile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;phs("Processing the profile photo...");try{S.avatar=await shrink(f,256,true,.85,70000);render();const ok=await push();toast(ok?"Profile photo saved.":"Profile photo shown here, but not saved: "+lastErr);phs(ok?"Profile photo saved.":"Profile photo not saved: "+lastErr)}catch(x){phs("Profile photo problem: "+(x.message||x));toast(x.message||"Could not use that photo.")}};
 $("hefile").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;phs("Processing the banner photo...");try{S.hero=await shrink(f,1400,false,.75,260000);if(S.heroPos==null)S.heroPos=40;render();const ok=await push();toast(ok?"Banner photo saved.":"Banner photo shown here, but not saved: "+lastErr);phs(ok?"Banner photo saved ("+Math.round(S.hero.length/1024)+" KB).":"Banner photo not saved: "+lastErr)}catch(x){phs("Banner photo problem: "+(x.message||x));toast(x.message||"Could not use that photo.")}};
 $("avdel").onclick=()=>{undoState=JSON.stringify(S);S.avatar="";save();render();toast("Profile photo removed.",{label:"Undo",fn:undo})};
 $("hedel").onclick=()=>{undoState=JSON.stringify(S);S.hero="";save();render();toast("Banner photo removed.",{label:"Undo",fn:undo})};
-$("hepos").oninput=e=>{S.heroPos=+e.target.value;save();applyPhotos()};
+$("hezoom").oninput=e=>{S.heroZoom=+e.target.value;save();applyPhotos()};
+$("hezr").onclick=()=>{S.heroZoom=100;save();applyPhotos()};
 const _r14=render;render=function(){_r14();applyPhotos();applyPhone()};
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
