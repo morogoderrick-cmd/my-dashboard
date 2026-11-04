@@ -335,6 +335,17 @@ header.hero-photo::before{display:none!important}
 .streak{min-width:10ch}
 .me{display:block;font-size:1.35rem;line-height:1.15;margin-bottom:2px}
 .mrow .tick{display:flex;flex-direction:column;align-items:center;justify-content:center}
+#emojiBtn{position:fixed;z-index:90;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--card);cursor:pointer;display:grid;place-items:center;font-size:1rem;padding:0;line-height:1;box-shadow:0 2px 8px #0004}
+#emojiBtn:hover{background:color-mix(in srgb,var(--a) 18%,var(--card))}
+#emojiPanel{position:fixed;z-index:91;width:min(300px,94vw);background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px #0008;padding:8px;color:var(--ink)}
+.etabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.etabs button{background:none;border:0;color:var(--mute);font:inherit;font-size:.78rem;padding:4px 8px;border-radius:8px;cursor:pointer;min-height:0!important}
+.etabs button.on{background:color-mix(in srgb,var(--a) 22%,transparent);color:var(--ink)}
+.egrid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;max-height:190px;overflow:auto}
+.egrid button{background:none;border:0;font-size:1.35rem;padding:4px 0;border-radius:8px;cursor:pointer;line-height:1.2;min-height:0!important}
+.egrid button:hover{background:color-mix(in srgb,var(--a) 18%,transparent)}
+#app input:not([type]),#app input[type=text],#app textarea{padding-right:42px}
+#app #appname,#app #cur{padding-right:11px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <meta name="theme-color" content="#0a0f1f">
@@ -779,7 +790,7 @@ drop:'<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>',
 pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
 bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
 card:'<rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>'};
-var EMOJI_ON=true;const EMJ={grid:"🧰",sun:"☀️",chart:"📊",calendar:"📅",tasks:"✅",target:"🎯",repeat:"💪",heart:"🙏",smile:"😊",moon:"🌙",list:"🛏️",drop:"💧",pen:"📝",bell:"🔔",card:"💰",home:"🏠",sliders:"⚙️",clock:"⏱️",check:"✔️"};
+var EMOJI_ON=false;const EMJ={grid:"🧰",sun:"☀️",chart:"📊",calendar:"📅",tasks:"✅",target:"🎯",repeat:"💪",heart:"🙏",smile:"😊",moon:"🌙",list:"🛏️",drop:"💧",pen:"📝",bell:"🔔",card:"💰",home:"🏠",sliders:"⚙️",clock:"⏱️",check:"✔️"};
 const ic=n=>(EMOJI_ON&&EMJ[n])?'<span class="ic em" data-ic="'+n+'" aria-hidden="true">'+EMJ[n]+'</span>':'<svg class="ic" data-ic="'+n+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICO[n]+'</svg>';
 [["Top tasks","tasks"],["Goals","target"],["Habits","repeat"],["Gratitude","heart"],["Mood","smile"],["Weekly review","chart"],["Sleep log","moon"],["Bedtime","list"],["Water","drop"],["Ideas","pen"],["Daily reminder","bell"],["Budget","card"]].forEach(([k,i])=>{const h=[...document.querySelectorAll("#vdash h2")].find(x=>x.textContent.trim().startsWith(k));if(h)h.insertAdjacentHTML("afterbegin",ic(i))});
 $("bar").innerHTML=[["home","home","Home"],["today","sun","Today"],["charts","chart","Charts"],["cal","calendar","Calendar"]].map(([v,i,t])=>`<button data-v="${v}">${ic(i)}<span>${t}</span></button>`).join("")+`<button id="morebtn" aria-haspopup="true">${ic("more")}<span>More</span></button>`;
@@ -1027,11 +1038,30 @@ function applyName(){const n=appNm();document.title=n;try{if(ready){if(S.appName
  const a=document.querySelector("#auth h1");if(a)a.textContent=n;const b=document.querySelector("#side .brand b");if(b)b.textContent=n;const l=document.querySelector("#side .logo");if(l)l.textContent=(n[0]||"H").toUpperCase();const i=$("appname");if(i&&document.activeElement!==i)i.value=S.appName||""}
 function refreshIcons(){document.querySelectorAll("[data-ic]").forEach(el=>{const t=document.createElement("template");t.innerHTML=ic(el.dataset.ic);el.replaceWith(t.content.firstChild)})}
 function greet(){const h=new Date().getHours(),t=h<4?"Good night":h<12?"Good morning":h<17?"Good afternoon":h<21?"Good evening":"Good night",e=h<4?"🌙":h<12?"☀️":h<17?"🌤️":h<21?"🌆":"🌙";$("hello").textContent=(EMOJI_ON?e+" ":"")+t}
-function syncEmoji(){const on=S.emoji!==false;EM.splice(0,5,...WORDS.map((w,i)=>on?EMO[i]+" "+w:w));if(on!==EMOJI_ON){EMOJI_ON=on;refreshIcons();barSig=""}greet();const c=$("emo_on");if(c)c.checked=on}
-{const l=document.createElement("label");l.innerHTML='<input type="checkbox" id="emo_on" style="flex:none;width:auto;padding:0"> Show emojis';$("s_pref").appendChild(l);$("emo_on").onchange=e=>{S.emoji=e.target.checked;save();render()};
+function syncEmoji(){const on=S.emoji===true;EM.splice(0,5,...WORDS.map((w,i)=>on?EMO[i]+" "+w:w));if(on!==EMOJI_ON){EMOJI_ON=on;refreshIcons();barSig=""}greet();const c=$("emo_on");if(c)c.checked=on}
+{const l=document.createElement("label");l.innerHTML='<input type="checkbox" id="emo_on" style="flex:none;width:auto;padding:0"> Use emojis in menus and labels';$("s_pref").appendChild(l);$("emo_on").onchange=e=>{S.emoji=e.target.checked;save();render()};
  const n=document.createElement("label");n.innerHTML='App name <input id="appname" maxlength="24" placeholder="'+APPDEF+'" aria-label="App name" style="flex:none;width:170px">';$("s_pref").appendChild(n);$("appname").oninput=e=>{S.appName=e.target.value;save();applyName()}}
 const _r15=render;render=function(){syncEmoji();applyName();_r15()};
 applyName();
+{const RE=/\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|\uFE0F\u20E3)*/gu,sp=t=>[...t.matchAll(RE)].map(m=>m[0]);
+ const CAT={"Smileys":sp("😀😃😄😁😆😅😂🤣😊🙂😉😍🥰😘😋😎🤗🤔😐😴😢😭😡😱🥳😇🤩😌😏🙃😬😮🥺😤🤯"),"Hands":sp("👍👎👏🙌🙏💪👋🤝✌️🤞👌🤙👊✊🫶☝️👀🧠"),"Hearts":sp("❤️🧡💛💚💙💜🖤🤍💖💕💯✨⭐🌟🔥🎉🎊🏆🥇✅❌⚡💡🔔📌"),"Life":sp("📚📝📖✏️💻📱📅⏰💰💼🏠🚗✈️🎯🔑🎁🛒☕🍎🥗🍕🍰🏃⚽🎵🎶📷🧹💊🛏️"),"Nature":sp("☀️🌙🌈🌧️🌱🌳🌸🍀🌍🌊🐶🐱🦁🐘🦋🌻🌅⛰️"),"Faith":sp("🙏✝️📖🕊️⛪🌅🌿✨💛❤️🤍🕯️")};
+ let rec=[];try{rec=JSON.parse(localStorage.getItem("emojiRecent")||"[]")}catch(e){}
+ let tgt=null,tab=rec.length?"Recent":"Smileys",hideT=0;
+ const btn=document.createElement("button");btn.id="emojiBtn";btn.type="button";btn.hidden=true;btn.setAttribute("aria-label","Insert an emoji");btn.textContent="😊";
+ const pan=document.createElement("div");pan.id="emojiPanel";pan.hidden=true;pan.setAttribute("role","dialog");pan.setAttribute("aria-label","Emoji picker");
+ document.body.appendChild(btn);document.body.appendChild(pan);
+ const OK=e=>{if(!e||e.disabled||e.readOnly||e.closest("dialog")||e.closest("#auth"))return false;if(e.tagName==="TEXTAREA")return true;if(e.tagName!=="INPUT")return false;return(e.getAttribute("type")||"text")==="text"&&!/^(appname|cur|vs_ref|vs_trans|vs_notice|rurl)$/.test(e.id)};
+ const place=()=>{if(!tgt||!document.body.contains(tgt)){btn.hidden=true;pan.hidden=true;return}const r=tgt.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight){btn.hidden=true;pan.hidden=true;return}btn.hidden=false;btn.style.left=Math.round(r.right-34)+"px";btn.style.top=Math.round(r.top+(r.height-28)/2)+"px";
+  if(!pan.hidden){const w=Math.min(300,innerWidth*.94);pan.style.left=Math.max(8,Math.min(r.right-w,innerWidth-w-8))+"px";const below=r.bottom+6+260<innerHeight-70;pan.style.top=below?(r.bottom+6)+"px":Math.max(8,r.top-266)+"px"}};
+ const draw=()=>{const tabs=(rec.length?["Recent"]:[]).concat(Object.keys(CAT));pan.innerHTML='<div class="etabs">'+tabs.map(t=>`<button type="button" data-et2="${t}" class="${t===tab?"on":""}">${t}</button>`).join("")+'</div><div class="egrid">'+(tab==="Recent"?rec:CAT[tab]||[]).map(e=>`<button type="button" data-em2="${e}" aria-label="Insert ${e}">${e}</button>`).join("")+"</div>"};
+ const put=em=>{if(!tgt)return;const s=tgt.selectionStart==null?tgt.value.length:tgt.selectionStart,e2=tgt.selectionEnd==null?s:tgt.selectionEnd;tgt.value=tgt.value.slice(0,s)+em+tgt.value.slice(e2);const p=s+em.length;try{tgt.setSelectionRange(p,p)}catch(x){}tgt.dispatchEvent(new Event("input",{bubbles:true}));tgt.focus();rec=[em].concat(rec.filter(x=>x!==em)).slice(0,16);try{localStorage.setItem("emojiRecent",JSON.stringify(rec))}catch(x){}};
+ document.addEventListener("focusin",e=>{clearTimeout(hideT);if(OK(e.target)){tgt=e.target;place()}else if(!e.target.closest("#emojiPanel,#emojiBtn")){btn.hidden=true;pan.hidden=true}});
+ document.addEventListener("focusout",e=>{if(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest("#emojiPanel,#emojiBtn"))return;hideT=setTimeout(()=>{if(!document.activeElement||!OK(document.activeElement)){btn.hidden=true;pan.hidden=true}},250)});
+ [btn,pan].forEach(x=>x.addEventListener("pointerdown",e=>e.preventDefault()));
+ btn.onclick=()=>{pan.hidden=!pan.hidden;if(!pan.hidden){tab=rec.length?"Recent":"Smileys";draw()}place()};
+ pan.addEventListener("click",e=>{const t=e.target.closest("[data-et2]"),m=e.target.closest("[data-em2]");if(t){tab=t.dataset.et2;draw()}else if(m){put(m.dataset.em2);if(tab!=="Recent"&&rec.length&&!pan.querySelector('[data-et2="Recent"]'))draw()}});
+ window.addEventListener("scroll",place,true);window.addEventListener("resize",place);
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!pan.hidden){pan.hidden=true}})}
 async function needName(u){for(;;){const n=prompt("Choose a username (3 to 20 letters, numbers, . - _)");if(!n)return u;try{return (await api("POST","/api/username",{username:n})).user}catch(x){alert(x.message)}}}
 async function start(u,fresh){
  if(!u.username)u=await needName(u);
