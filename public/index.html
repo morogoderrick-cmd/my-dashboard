@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hatua</title>
+<title>Dashboard</title>
 <meta name="description" content="A private personal dashboard: tasks, goals, habits, mood, sleep, budget and reviews. Data stays in your browser.">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&family=Lora:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -375,7 +375,7 @@ header.hero-photo::before{display:none!important}
 <div id="rbanner" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:60;background:var(--a);color:#fff;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px #0004"><span style="flex:1"><b>Time for your daily check-in.</b> Update your tasks, habits, and mood.<small id="rverse" style="display:block;margin-top:4px"></small></span><button class="btn" id="rsnooze" style="background:transparent;color:#fff;border:2px solid #fff">Snooze 10 min</button><button class="btn" id="rdone" style="background:#fff;color:#1b2733">OK</button></div>
 <div id="abg" aria-hidden="true"><i></i><i></i><i></i></div>
 <div id="auth" style="max-width:380px;margin:10vh auto 0;padding:0 16px">
-<h1 style="font-size:2.2rem">Hatua</h1>
+<h1 style="font-size:2.2rem">Dashboard</h1>
 <p id="atext" style="color:var(--mute)"></p>
 <section>
 <form id="loginform" style="flex-direction:column;margin:0">
@@ -397,7 +397,7 @@ header.hero-photo::before{display:none!important}
 <div id="resume" hidden>
 <p style="margin:0 0 12px;font-size:1.05rem">Signed in as <b id="rname"></b></p>
 <div style="display:flex;flex-direction:column;gap:10px">
-<button class="btn" id="rcont" type="button">Continue to my dashboard</button>
+<button class="btn" id="rcont" type="button">Continue to <span class="bn">Dashboard</span></button>
 <button class="ghost" id="rother" type="button">Not you? Log in as someone else</button>
 <label style="font-size:.85rem;color:var(--mute);display:flex;gap:6px;align-items:center"><input type="checkbox" id="rauto" style="flex:none;width:auto;padding:0"> Sign in automatically next time (skip this screen)</label>
 </div>
@@ -517,14 +517,14 @@ header.hero-photo::before{display:none!important}
 <p class="chartnote" style="margin-top:16px">Verse box</p><div class="srow" id="s_verse"></div></section>
 <section><h2>Preferences</h2><p class="chartnote">Currency for the budget, celebrations, and your daily reminder.</p><div class="srow" id="s_pref"></div></section>
 <section><h2>Data and backup</h2><p class="chartnote">Download your information as a spreadsheet or report, or restore a backup file.</p><div class="srow" id="s_data"></div></section>
-<section><h2>Install the app</h2><p class="chartnote">Add the dashboard to your home screen. The button shows when your browser allows it.</p><div class="srow" id="s_app"></div></section>
+<section><h2>Install the app</h2><p class="chartnote">Add <span class="bn">Dashboard</span> to your home screen. The button shows when your browser allows it.</p><div class="srow" id="s_app"></div></section>
 <section><h2>Photos</h2><p class="chartnote">Your profile picture and banner photo are saved to your account and shown only to you.</p>
 <div class="srow"><span id="avprev" class="avp" aria-hidden="true"></span><button class="tick" id="avpick" type="button">Choose profile photo</button><button class="ghost" id="avdel" type="button" hidden>Remove</button></div>
 <div class="srow"><button class="tick" id="hepick" type="button">Choose banner photo</button><button class="ghost" id="hedel" type="button" hidden>Remove</button></div>
 <div id="hprev" class="hprev" hidden></div><p id="phstat" class="chartnote" style="margin-top:8px"></p>
 <label class="sl2">Banner zoom: <b id="hezv">100%</b> <small>(smaller on the left, bigger on the right)</small><input type="range" id="hezoom" min="60" max="250" step="5" value="100"></label><div class="srow"><button class="ghost" id="hezr" type="button">Reset zoom</button></div>
 <input type="file" id="avfile" accept="image/*" hidden><input type="file" id="hefile" accept="image/*" hidden></section>
-<section><h2>Phone options</h2><p class="chartnote">Make the dashboard comfortable on a small screen.</p>
+<section><h2>Phone options</h2><p class="chartnote">Make <span class="bn">Dashboard</span> comfortable on a small screen.</p>
 <div class="srow"><label>Text size <select id="ph_text" style="flex:none;width:auto"><option value="s">Small</option><option value="m">Medium</option><option value="l">Large</option></select></label></div>
 <div class="srow"><label><input type="checkbox" id="ph_compact" style="flex:none;width:auto;padding:0"> Compact layout</label><label><input type="checkbox" id="ph_haptic" style="flex:none;width:auto;padding:0"> Vibrate on taps (Android)</label><label><input type="checkbox" id="ph_wake" style="flex:none;width:auto;padding:0"> Keep screen on during focus timer</label></div>
 <p class="chartnote" style="margin-top:12px">Bottom bar shortcuts (four tabs, plus More)</p><div class="srow"><select id="pb0" aria-label="Bottom bar slot 1"></select><select id="pb1" aria-label="Bottom bar slot 2"></select><select id="pb2" aria-label="Bottom bar slot 3"></select><select id="pb3" aria-label="Bottom bar slot 4"></select></div></section>
@@ -615,9 +615,9 @@ function extra2(){
 }
 const _r2=render;render=function(){_r2();extra2()};
 document.addEventListener("click",e=>{const m=e.target.closest("[data-m]");if(!m)return;S.moods[today()]=+m.dataset.m;save();render()});
-$("dl").onclick=()=>{const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="dashboard-backup-"+today()+".json";document.body.appendChild(a);a.click();a.remove();setCloud("Backup file downloaded")};
+$("dl").onclick=()=>{const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=slug()+"-backup-"+today()+".json";document.body.appendChild(a);a.click();a.remove();setCloud("Backup file downloaded")};
 $("rs").onclick=()=>$("rf").click();
-$("rf").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(typeof d!=="object"||!Array.isArray(d.tasks))throw 0;S=Object.assign(DEF(),d);$("name").value=S.name;save();render();setCloud("Restored from file")}catch(x){setCloud("That file is not a dashboard backup")}};r.readAsText(f)};
+$("rf").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(typeof d!=="object"||!Array.isArray(d.tasks))throw 0;S=Object.assign(DEF(),d);$("name").value=S.name;save();render();setCloud("Restored from file")}catch(x){setCloud("That file is not a backup from "+appNm())}};r.readAsText(f)};
 const PR=["What made you smile today?","What did you finish today?","Who helped you recently?","What are you proud of this week?","What went better than expected?","What small thing felt good today?","What are you looking forward to?"];
 function extra3(){
  const t=today(),n=S.water[t]||0,rd=S.rdone[t]||[];
@@ -716,7 +716,7 @@ $("rform").onsubmit=e=>{e.preventDefault();const pick=[...document.querySelector
 $("rics").onclick=()=>{const t=($("rtime").value||S.reminder.time).split(":"),dl=[...document.querySelectorAll("#rdays input:checked")].map(c=>+c.dataset.d),D=dl.length?dl:ALL,BY=["SU","MO","TU","WE","TH","FR","SA"];let d=new Date();for(let i=0;i<7&&!D.includes(d.getDay());i++)d.setDate(d.getDate()+1);
  const ds=d.getFullYear()+P2(d.getMonth()+1)+P2(d.getDate()),rule=D.length===7?"RRULE:FREQ=DAILY":"RRULE:FREQ=WEEKLY;BYDAY="+D.map(x=>BY[x]).join(",");
  const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//"+appNm()+"//EN","BEGIN:VEVENT","UID:dashboard-reminder-"+uid+"@"+location.host,"DTSTAMP:"+new Date().toISOString().replace(/[-:]/g,"").slice(0,15)+"Z","DTSTART:"+ds+"T"+t[0]+t[1]+"00","DURATION:PT10M",rule,"SUMMARY:Log in to "+appNm(),"DESCRIPTION:Daily check-in at "+location.origin,"URL:"+location.origin,"BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Log in to "+appNm(),"TRIGGER:PT0M","END:VALARM","END:VEVENT","END:VCALENDAR"];
- const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"}));a.download="dashboard-reminder.ics";document.body.appendChild(a);a.click();a.remove()};
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([L.join("\r\n")],{type:"text/calendar"}));a.download=slug()+"-reminder.ics";document.body.appendChild(a);a.click();a.remove()};
 function welcome(u,isNew){const w=$("welcome");w.textContent=(isNew?"Welcome, ":"Welcome back, ")+(u.username||"friend");w.style.transition="";w.style.opacity=1;w.style.animation="pop .5s ease both";w.hidden=false;setTimeout(()=>{w.style.transition="opacity .5s";w.style.opacity=0;setTimeout(()=>{w.hidden=true},500)},1300)}
 function exportData(pretty){
  const m=v=>pretty?fmt(v):v,dates=new Set([...Object.keys(S.moods),...Object.keys(S.sleep),...Object.keys(S.water),...Object.keys(S.notes)]);
@@ -732,11 +732,11 @@ function exportData(pretty){
  "Budget":S.tx.slice().reverse().map(x=>({"Date":x.d||"(no date)","Type":x.t==="inc"?"Income":"Expense","Category":x.c,"Amount":m(x.a)})),
  "Ideas":S.ideas.map(x=>({"Idea":x}))}}
 function saveFile(name,type,data){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();a.remove()}
-$("dlx").onclick=()=>{if(!window.XLSX){alert("The Excel tool could not load. Check your internet connection and reload the page.");return}const wb=XLSX.utils.book_new();Object.entries(exportData(false)).forEach(([n,r])=>{if(!r.length)return;const ws=XLSX.utils.json_to_sheet(r);ws["!cols"]=Object.keys(r[0]).map(k=>({wch:Math.min(50,Math.max(k.length,...r.map(o=>String(o[k]==null?"":o[k]).length))+2)}));XLSX.utils.book_append_sheet(wb,ws,n)});XLSX.writeFile(wb,"my-dashboard-"+today()+".xlsx");setCloud("Excel file downloaded")};
+$("dlx").onclick=()=>{if(!window.XLSX){alert("The Excel tool could not load. Check your internet connection and reload the page.");return}const wb=XLSX.utils.book_new();Object.entries(exportData(false)).forEach(([n,r])=>{if(!r.length)return;const ws=XLSX.utils.json_to_sheet(r);ws["!cols"]=Object.keys(r[0]).map(k=>({wch:Math.min(50,Math.max(k.length,...r.map(o=>String(o[k]==null?"":o[k]).length))+2)}));XLSX.utils.book_append_sheet(wb,ws,n)});XLSX.writeFile(wb,slug()+"-"+today()+".xlsx");setCloud("Excel file downloaded")};
 $("dlr").onclick=()=>{const css="body{font:15px/1.5 system-ui,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#1b2733}h1{margin:0}h2{margin:28px 0 8px;border-bottom:2px solid #1f7a8c;padding-bottom:4px;color:#1f7a8c}table{border-collapse:collapse;width:100%;font-size:14px}th,td{border:1px solid #d3dde6;padding:6px 8px;text-align:left;vertical-align:top}th{background:#eef3f7}@media print{h2{break-after:avoid}tr{break-inside:avoid}}";
  const tb=r=>"<table><tr>"+Object.keys(r[0]).map(k=>"<th>"+esc(k)+"</th>").join("")+"</tr>"+r.map(o=>"<tr>"+Object.values(o).map(v=>"<td>"+esc(v)+"</td>").join("")+"</tr>").join("")+"</table>";
  const html='<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(appNm())+' report</title><style>'+css+'</style></head><body><h1>'+esc(appNm())+' report</h1><p>'+esc(S.name)+" \u00B7 exported "+esc(new Date().toLocaleString())+"</p>"+Object.entries(exportData(true)).map(([n,r])=>r.length?"<h2>"+esc(n)+"</h2>"+tb(r):"").join("")+'<p style="margin-top:28px;color:#5d6b78">Tip: press Ctrl+P and choose Save as PDF to make a PDF copy.</p></body></html>';
- saveFile("my-dashboard-report-"+today()+".html","text/html",html);setCloud("Report downloaded")};
+ saveFile(slug()+"-report-"+today()+".html","text/html",html);setCloud("Report downloaded")};
 
 function dayScore(k){const t=k||today(),parts=[],rel=S.tasks.filter(x=>x.d?x.dd===t:(!x.u||x.u<=t));
  if(rel.length){const n=rel.filter(x=>x.d).length;parts.push(["Tasks",n/rel.length,n+" of "+rel.length])}
@@ -799,7 +799,7 @@ document.addEventListener("click",e=>{if(!e.target.closest("#morebtn,#morepop"))
 show("home");
 const PAL={planner:["#4f5bd5","#e07b00","#6d7bff","#ffb454"],ocean:["#1f7a8c","#d99a00","#4fb3c6","#f0b429"],forest:["#2f7d4f","#c98a1a","#5cc38a","#f0b429"],sunset:["#d2543a","#d98e1c","#ff8a6b","#ffc15e"],lavender:["#6b5bc4","#cf5f8f","#a89bff","#ff9fc4"],slate:["#3d5a80","#d98200","#8fb3de","#ffc857"]};
 {let c="";for(const[n,[a,b,da,db]]of Object.entries(PAL))c+=`:root[data-pal="${n}"]{--a:${a};--b:${b}}@media(prefers-color-scheme:dark){:root:not([data-theme="light"])[data-pal="${n}"]{--a:${da};--b:${db}}}:root[data-theme="dark"][data-pal="${n}"]{--a:${da};--b:${db}}`;const st=document.createElement("style");st.textContent=c;document.head.appendChild(st)}
-function applyPal(){const p=PAL[S.palette]?S.palette:"planner";document.documentElement.dataset.pal=p;$("pals").innerHTML='<span style="color:var(--mute)">Color theme: <b style="color:var(--ink)">'+p[0].toUpperCase()+p.slice(1)+"</b></span>"+Object.entries(PAL).map(([n,c])=>`<button class="sw ${n===p?"on":""}" data-pal="${n}" aria-label="${n} theme" aria-pressed="${n===p}" style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></button>`).join("")}
+function applyPal(){const p=PAL[S.palette]?S.palette:"planner";document.documentElement.dataset.pal=p;$("pals").innerHTML='<span style="color:var(--mute)">Color theme: <b style="color:var(--ink)">'+(p==="planner"?"Midnight":p[0].toUpperCase()+p.slice(1))+"</b></span>"+Object.entries(PAL).map(([n,c])=>`<button class="sw ${n===p?"on":""}" data-pal="${n}" aria-label="${n==="planner"?"midnight":n} theme" aria-pressed="${n===p}" style="background:linear-gradient(135deg,${c[0]} 50%,${c[1]} 50%)"></button>`).join("")}
 document.addEventListener("click",e=>{const b=e.target.closest(".sw");if(!b)return;S.palette=b.dataset.pal;save();render()});
 const _r8=render;render=function(){_r8();applyPal()};
 let undoState=null,edSave=null;
@@ -830,9 +830,9 @@ document.addEventListener("submit",e=>{const id=e.target.id;
  else if(id==="svform"){e.preventDefault();const a=parseFloat($("svamt").value);if(!(a>0))return;const was=S.savings.s>=S.savings.t;S.savings.s+=a;save();render();if(!was&&S.savings.s>=S.savings.t&&S.confetti!==false)celebrate("Savings goal reached: "+S.savings.x)}
  else if(id==="lform"){e.preventDefault();CATS.forEach(c=>S.limits[c]=parseFloat($("lim_"+c).value)||0);save();render();toast("Limits saved.")}});
 const _r9=render;render=function(){_r9();extra9()};
-const TOUR=[["Welcome","This is your private dashboard. Everything you add is saved to your account automatically, so you can open it on any device."],["Tools and Today","All tools is where you add tasks, goals, habits, mood, sleep, water, notes and your budget. Today shows what is left to do and your daily score."],["Your progress","The Charts, Calendar, This week, This month and This year tabs show how you are doing over time. You can download an Excel file or a report at any time."],["Make it yours","Set a daily reminder with your own sound, pick a color theme at the bottom of the page, and install the app on your home screen. Tap Help in the top banner to see this guide again."]];
+const TOUR=[["Welcome","This is your private space. Everything you add is saved to your account automatically, so you can open it on any device."],["Tools and Today","All tools is where you add tasks, goals, habits, mood, sleep, water, notes and your budget. Today shows what is left to do and your daily score."],["Your progress","The Charts, Calendar, This week, This month and This year tabs show how you are doing over time. You can download an Excel file or a report at any time."],["Make it yours","Set a daily reminder with your own sound, pick a color theme at the bottom of the page, and install the app on your home screen. Tap Help in the top banner to see this guide again."]];
 let ts=0;
-function tourShow(){const s=TOUR[ts];$("tstep").textContent="Step "+(ts+1)+" of "+TOUR.length;$("ttitle").textContent=s[0];$("tbody").textContent=s[1];$("tnext").textContent=ts===TOUR.length-1?"Done":"Next"}
+function tourShow(){const s=TOUR[ts];$("tstep").textContent="Step "+(ts+1)+" of "+TOUR.length;$("ttitle").textContent=ts===0?"Welcome to "+appNm():s[0];$("tbody").textContent=s[1];$("tnext").textContent=ts===TOUR.length-1?"Done":"Next"}
 function openTour(){ts=0;tourShow();if(!$("tour").open)$("tour").showModal()}
 $("tnext").onclick=()=>{if(ts<TOUR.length-1){ts++;tourShow()}else $("tour").close()};
 $("tskip").onclick=()=>$("tour").close();
@@ -927,7 +927,7 @@ if(!document.documentElement.dataset.theme)document.documentElement.dataset.them
 document.documentElement.dataset.pal="planner";
 {const A=[["home","home","Home"],["go:tasks","tasks","Tasks"],["cal","calendar","Calendar"],["go:habits","repeat","Habits"],["go:goals","target","Goals"],["go:journal","heart","Journal"],["go:notes","pen","Notes"],["go:mood","smile","Mood"],["settings","sliders","Settings"]],B=[["dash","grid","All tools"],["today","sun","Today"],["charts","chart","Charts"],["week","chart","This week"],["month","calendar","This month"],["year","calendar","This year"],["years","calendar","All years"]];
  const bt=a=>a.map(([v,i,t])=>v.startsWith("go:")?`<button data-go="${v.slice(3)}">${ic(i)}<span>${t}</span></button>`:`<button data-v="${v}">${ic(i)}<span>${t}</span></button>`).join("");
- $("side").innerHTML=`<div class="brand"><span class="logo">P</span><div><b>My Planner</b><small>Plan · Focus · Achieve</small></div></div><nav>${bt(A)}</nav><div class="sl">More views</div><nav>${bt(B)}</nav><div class="sn">Small steps every day create big results.</div>`;
+ $("side").innerHTML=`<div class="brand"><span class="logo">D</span><div><b>Dashboard</b><small>Plan · Focus · Achieve</small></div></div><nav>${bt(A)}</nav><div class="sl">More views</div><nav>${bt(B)}</nav><div class="sn">Small steps every day create big results.</div>`;
  [["Top tasks","tasks"],["Goals","goals"],["Habits","habits"],["Gratitude","journal"],["Ideas","notes"],["Mood","mood"]].forEach(([k,i])=>{const h=[...document.querySelectorAll("#vdash h2")].find(x=>x.textContent.trim().startsWith(k));if(h)h.closest("section").id="sec-"+i});
  const th=$("theme");th.className="hbtn";th.innerHTML=ic("sun");th.setAttribute("aria-label","Switch light or dark mode");$("hthslot").replaceWith(th);document.querySelector(".htop").prepend($("date"))}
 function goSec(id){show("dash");setTimeout(()=>{const s=$("sec-"+id);if(s)s.scrollIntoView({behavior:"smooth",block:"start"})},150)}
@@ -1032,9 +1032,10 @@ $("hezoom").oninput=e=>{S.heroZoom=+e.target.value;save();applyPhotos()};
 $("hezr").onclick=()=>{S.heroZoom=100;save();applyPhotos()};
 const _r14=render;render=function(){_r14();applyPhotos();applyPhone()};
 const EMO=["😞","😕","😐","🙂","😄"],WORDS=["Awful","Low","Okay","Good","Happy"];
-var APPDEF="Hatua";
+var APPDEF="Dashboard";
 function appNm(){const s=(S.appName||"").trim();if(s)return s;if(!ready){try{const c=localStorage.getItem("appName");if(c)return c}catch(e){}}return APPDEF}
-function applyName(){const n=appNm();document.title=n;try{if(ready){if(S.appName)localStorage.setItem("appName",S.appName);else localStorage.removeItem("appName")}}catch(e){}
+const slug=()=>appNm().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"dashboard";
+function applyName(){const n=appNm();document.title=n;document.querySelectorAll(".bn").forEach(e=>e.textContent=n);try{if(ready){if(S.appName)localStorage.setItem("appName",S.appName);else localStorage.removeItem("appName")}}catch(e){}
  const a=document.querySelector("#auth h1");if(a)a.textContent=n;const b=document.querySelector("#side .brand b");if(b)b.textContent=n;const l=document.querySelector("#side .logo");if(l)l.textContent=(n[0]||"H").toUpperCase();const i=$("appname");if(i&&document.activeElement!==i)i.value=S.appName||""}
 function refreshIcons(){document.querySelectorAll("[data-ic]").forEach(el=>{const t=document.createElement("template");t.innerHTML=ic(el.dataset.ic);el.replaceWith(t.content.firstChild)})}
 function greet(){const h=new Date().getHours(),t=h<4?"Good night":h<12?"Good morning":h<17?"Good afternoon":h<21?"Good evening":"Good night",e=h<4?"🌙":h<12?"☀️":h<17?"🌤️":h<21?"🌆":"🌙";$("hello").textContent=(EMOJI_ON?e+" ":"")+t}
@@ -1076,7 +1077,7 @@ async function start(u,fresh){
  if(fresh)welcome(u,fresh==="new");
  if(!S.toured)setTimeout(openTour,fresh?2000:800);
 }
-const mode=m=>{$("resume").hidden=m!=="resume";$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="resume"?"Welcome back.":m==="login"?"Log in to open your private dashboard.":"Create your account. Your data is saved privately to it."};
+const mode=m=>{$("resume").hidden=m!=="resume";$("loginform").hidden=m!=="login";$("signupform").hidden=m!=="signup";amsg("");$("atext").textContent=m==="resume"?"Welcome back.":m==="login"?"Log in to open "+appNm()+".":"Create your account. Your data is saved privately to it."};
 mode("login");
 $("tosignup").onclick=()=>mode("signup");$("tologin").onclick=()=>mode("login");
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pw]");if(!b)return;const i=$(b.dataset.pw),show=i.type==="password";i.type=show?"text":"password";b.textContent=show?"Hide":"Show";b.setAttribute("aria-label",show?"Hide password":"Show password")});
