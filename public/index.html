@@ -522,6 +522,149 @@ header{min-height:0;padding-top:18px}
 </form>
 <ul class="tx" id="tx"></ul>
 </section>
+ <!-- ===== PASSWORD VAULT: paste this whole block as one piece ===== -->
+<style>
+#vlt .vl-r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#vlt input,#vlt textarea,#vlt select{width:100%;flex:none;margin:4px 0 10px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+#vlt label{font-size:.85rem;color:var(--mute)}
+#vlt .vl-lk{max-width:380px}
+#vlt .vl-bad{color:var(--bad);margin:0 0 8px}
+#vlt .vl-e{border-top:1px solid var(--line);padding:12px 0}
+#vlt .vl-e:first-child{border:0}
+#vlt .vl-m{color:var(--mute);font-size:.9rem;word-break:break-all}
+#vlt .vl-m a{color:var(--a)}
+#vlt .vl-n{white-space:pre-wrap;margin-top:4px}
+#vlt .vl-p{font-family:ui-monospace,Menlo,Consolas,monospace;margin:4px 0 8px;word-break:break-all}
+#vlt .vl-lr input{margin:4px 0}
+#vlt .vl-lr .l{flex:1 1 110px;width:auto}
+#vlt .vl-lr .u{flex:3 1 180px;width:auto}
+</style>
+<section class="wide" id="vlt">
+<h2>Password vault <small id="vlSt">locked</small></h2>
+
+<div id="vlLock" class="vl-lk">
+  <p class="chartnote" id="vlMsg"></p>
+  <label for="vlPw">Master password</label>
+  <input id="vlPw" type="password" autocomplete="off">
+  <div id="vlW2"><label for="vlPw2">Confirm master password</label><input id="vlPw2" type="password" autocomplete="off"></div>
+  <p class="vl-bad" id="vlErr" role="alert"></p>
+  <div class="vl-r"><button class="btn" id="vlGo" type="button">Unlock</button><button class="ghost" id="vlImp2" type="button">Import a backup</button></div>
+</div>
+
+<div id="vlApp" hidden>
+  <div class="vl-r" style="margin-bottom:12px"><button class="btn" id="vlLk" type="button">Lock</button><button class="tick" id="vlExp" type="button">Export backup</button><button class="tick" id="vlImp" type="button">Import backup</button></div>
+  <p class="vl-bad" id="vlDirty" role="status" hidden>You have changes that aren’t backed up yet. Click <b>Export backup</b> and keep the file safe.</p>
+  <details id="vlForm" open>
+    <summary id="vlTitle" style="cursor:pointer;font-weight:600;margin-bottom:8px">Add a password</summary>
+    <label for="vlSite">Website name</label>
+    <input id="vlSite" placeholder="Facebook">
+    <label>Website links (optional)</label>
+    <div id="vlRows"></div>
+    <button class="tick" id="vlMore" type="button" style="margin:2px 0 12px">Add another link</button>
+    <datalist id="vlOpts"><option value="Frontend"><option value="Backend"><option value="Admin"><option value="Dashboard"><option value="Login"><option value="API"><option value="Database"><option value="Hosting"></datalist>
+    <label for="vlUser">Username or email</label>
+    <input id="vlUser" autocomplete="off">
+    <label for="vlPass">Password</label>
+    <div class="pw"><input id="vlPass" type="password" autocomplete="off" style="padding-right:70px"><button type="button" class="pwt" id="vlShow" data-pw="vlPass" aria-label="Show password">Show</button></div>
+    <p class="chartnote" id="vlStr" style="margin:-6px 0 8px"></p>
+    <div class="vl-r" style="margin-bottom:10px"><button class="tick" id="vlGen" type="button">Generate</button><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="vlSym" checked style="width:auto;margin:0">Symbols</label></div>
+    <label for="vlNotes">Notes (optional)</label>
+    <textarea id="vlNotes" rows="3" placeholder="Security questions, recovery codes, anything else"></textarea>
+    <p class="vl-bad" id="vlAddErr" role="alert"></p>
+    <div class="vl-r"><button class="btn" id="vlAdd" type="button">Save</button><button class="ghost" id="vlCancel" type="button" hidden>Cancel</button></div>
+  </details>
+  <label for="vlFind" style="display:block;margin-top:16px">Search</label>
+  <input id="vlFind" placeholder="Type a website name">
+  <div id="vlList"></div>
+  <details style="margin-top:14px">
+    <summary style="cursor:pointer;font-weight:600">Vault settings</summary>
+    <label for="vlSel" style="display:block;margin-top:10px">Auto-lock after</label>
+    <select id="vlSel"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option></select>
+    <h3 style="margin:8px 0">Change master password</h3>
+    <label for="vlCo">Current master password</label><input id="vlCo" type="password" autocomplete="off">
+    <label for="vlCn">New master password</label><input id="vlCn" type="password" autocomplete="off">
+    <label for="vlCn2">Confirm new master password</label><input id="vlCn2" type="password" autocomplete="off">
+    <p class="chartnote" id="vlCm" role="alert"></p>
+    <button class="btn" id="vlCp" type="button">Change master password</button>
+  </details>
+</div>
+<input type="file" id="vlFile" accept=".json,application/json" hidden>
+</section>
+<script>
+(function(){
+const q=id=>document.getElementById(id),enc=new TextEncoder(),dec=new TextDecoder();
+let key=null,salt=null,items=[],editId=null,dirty=false,idle=null,lastU;
+const uidNow=()=>(typeof uid!=="undefined"&&uid)||"x",KEY=()=>"vault-v1:"+uidNow();
+const b64=b=>{let s="";for(const x of new Uint8Array(b))s+=String.fromCharCode(x);return btoa(s)},ub=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const get=()=>{try{return JSON.parse(localStorage.getItem(KEY()))}catch{return null}};
+const mins=()=>{try{return+localStorage.getItem("vault-lock")||5}catch{return 5}};
+const flag=()=>{q("vlDirty").hidden=!dirty};
+const derive=async(pw,s)=>{const m=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt:s,iterations:600000,hash:"SHA-256"},m,{name:"AES-GCM",length:256},false,["encrypt","decrypt"])};
+async function save(){const iv=crypto.getRandomValues(new Uint8Array(12)),ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},key,enc.encode(JSON.stringify(items)));try{localStorage.setItem(KEY(),JSON.stringify({salt:b64(salt),iv:b64(iv),data:b64(ct)}))}catch{alert("Could not save: this browser is blocking storage.");return}dirty=true;flag()}
+const bump=()=>{clearTimeout(idle);if(key)idle=setTimeout(lock,mins()*60000)};
+["click","keydown","touchstart"].forEach(e=>document.addEventListener(e,()=>{if(key)bump()}));
+
+function lock(){key=null;items=[];clearTimeout(idle);reset();q("vlApp").hidden=true;q("vlLock").hidden=false;const ex=!!get();q("vlW2").hidden=ex;q("vlGo").textContent=ex?"Unlock":"Create vault";q("vlMsg").textContent=ex?"Enter your master password to open your vault.":"Create a master password. It can’t be recovered if you forget it.";q("vlPw").value="";q("vlPw2").value="";q("vlErr").textContent="";q("vlSt").textContent="locked"}
+q("vlGo").onclick=async()=>{const pw=q("vlPw").value,err=q("vlErr"),v=get();err.textContent="";
+ try{if(!v){if(pw.length<8){err.textContent="Use at least 8 characters.";return}if(pw!==q("vlPw2").value){err.textContent="The passwords don’t match.";return}salt=crypto.getRandomValues(new Uint8Array(16));key=await derive(pw,salt);items=[];await save()}
+ else{const s=ub(v.salt),k=await derive(pw,s);items=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:ub(v.iv)},k,ub(v.data))));salt=s;key=k}}
+ catch{err.textContent="Wrong master password.";return}
+ q("vlLock").hidden=true;q("vlApp").hidden=false;q("vlSt").textContent="unlocked";render();bump()};
+["vlPw","vlPw2"].forEach(i=>q(i).addEventListener("keydown",e=>{if(e.key==="Enter")q("vlGo").click()}));
+q("vlLk").onclick=lock;
+
+const safeUrl=u=>{u=u.trim();if(!u)return"";if(!/^https?:\/\//i.test(u))u="https://"+u;try{return new URL(u).href}catch{return""}};
+function addRow(l="",u=""){const r=document.createElement("div");r.className="vl-r vl-lr";r.innerHTML='<input class="l" list="vlOpts" placeholder="Label (e.g. Frontend)" aria-label="Link label"><input class="u" inputmode="url" placeholder="https://example.com/admin" aria-label="Link address">';r.children[0].value=l;r.children[1].value=u;const b=document.createElement("button");b.type="button";b.className="ghost";b.textContent="Remove";b.onclick=()=>{if(q("vlRows").children.length>1)r.remove();else{r.children[0].value="";r.children[1].value=""}};r.append(b);q("vlRows").append(r)}
+const links=()=>Array.from(q("vlRows").children).map(r=>({label:r.children[0].value.trim(),url:safeUrl(r.children[1].value)})).filter(l=>l.url);
+q("vlMore").onclick=()=>addRow();
+
+function strength(){const p=q("vlPass").value,e=q("vlStr");if(!p){e.textContent="";return}const k=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(p)).length,s=p.length>=16&&k>=3?"Strong":p.length>=10&&k>=3?"Good":p.length>=8&&k>=2?"Fair":"Weak";e.textContent="Strength: "+s+(items.some(x=>x.pass===p&&x.id!==editId)?" · already used for another website":"")}
+q("vlPass").oninput=strength;
+q("vlGen").onclick=()=>{const c="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"+(q("vlSym").checked?"!@#$%^&*-_=+":"");q("vlPass").value=Array.from(crypto.getRandomValues(new Uint32Array(16)),x=>c[x%c.length]).join("");q("vlPass").type="text";q("vlShow").textContent="Hide";strength()};
+function reset(){editId=null;["vlSite","vlUser","vlPass","vlNotes"].forEach(i=>{q(i).value=""});q("vlPass").type="password";q("vlShow").textContent="Show";q("vlRows").replaceChildren();addRow();strength();q("vlTitle").textContent="Add a password";q("vlAdd").textContent="Save";q("vlCancel").hidden=true;q("vlAddErr").textContent=""}
+q("vlCancel").onclick=reset;
+q("vlAdd").onclick=async()=>{const site=q("vlSite").value.trim(),pass=q("vlPass").value;if(!site||!pass){q("vlAddErr").textContent="Add a website name and a password.";return}
+ const rec={site,links:links(),user:q("vlUser").value.trim(),pass,notes:q("vlNotes").value.trim()},o=items.find(x=>x.id===editId);
+ if(o)Object.assign(o,rec);else items.push({id:crypto.randomUUID(),...rec});await save();reset();render()};
+function edit(e){reset();editId=e.id;q("vlSite").value=e.site;q("vlUser").value=e.user||"";q("vlPass").value=e.pass;q("vlNotes").value=e.notes||"";q("vlRows").replaceChildren();(e.links&&e.links.length?e.links:[{label:"",url:""}]).forEach(l=>addRow(l.label,l.url));q("vlTitle").textContent="Edit "+e.site;q("vlAdd").textContent="Update";q("vlCancel").hidden=false;q("vlForm").open=true;strength();q("vlForm").scrollIntoView({behavior:"smooth"})}
+
+const mk=(t,f,c)=>{const b=document.createElement("button");b.type="button";b.className=c||"tick";b.textContent=t;b.onclick=f;return b};
+const div=(c,t)=>{const d=document.createElement("div");if(c)d.className=c;if(t!=null)d.textContent=t;return d};
+async function cp(t,b,lab,ms,clr){try{await navigator.clipboard.writeText(t);b.textContent="Copied"}catch{b.textContent="Copy failed"}setTimeout(()=>{b.textContent=lab;if(clr)navigator.clipboard.writeText("").catch(()=>{})},ms)}
+function render(){const t=q("vlFind").value.trim().toLowerCase(),L=q("vlList");L.replaceChildren();
+ const sh=items.filter(e=>e.site.toLowerCase().includes(t)).sort((a,b)=>(!!b.fav-!!a.fav)||a.site.localeCompare(b.site));
+ if(!sh.length){L.append(div("empty",items.length?"No websites match your search.":"Your vault is empty. Add your first password above."));return}
+ for(const e of sh){const d=div("vl-e"),h=document.createElement("h3");h.style.cssText="margin:0;font-size:1.05rem";h.textContent=(e.fav?"★ ":"")+e.site;d.append(h);const m=div("vl-m");
+  for(const l of e.links||[]){const r=div();if(l.label){const b=document.createElement("strong");b.textContent=l.label+": ";r.append(b)}
+   if(/^https?:\/\//i.test(l.url)){const a=document.createElement("a");a.href=l.url;a.target="_blank";a.rel="noopener noreferrer";a.textContent=l.url;r.append(a)}else r.append(l.url);m.append(r)}
+  if(e.user)m.append(div("",e.user));if(e.notes)m.append(div("vl-n",e.notes));d.append(m);
+  const p=div("vl-p","••••••••••");d.append(p);const r=div("vl-r");let sw=false;
+  r.append(mk("Show",ev=>{sw=!sw;p.textContent=sw?e.pass:"••••••••••";ev.target.textContent=sw?"Hide":"Show"}),
+   mk("Copy password",ev=>cp(e.pass,ev.target,"Copy password",20000,true)),
+   e.user?mk("Copy username",ev=>cp(e.user,ev.target,"Copy username",2000)):"",
+   mk(e.fav?"Unpin":"Pin",async()=>{e.fav=!e.fav;await save();render()}),
+   mk("Edit",()=>edit(e)),
+   mk("Remove",async()=>{if(confirm("Delete "+e.site+"?")){items=items.filter(x=>x.id!==e.id);await save();render()}},"ghost"));
+  d.append(r);L.append(d)}}
+q("vlFind").oninput=render;
+
+q("vlExp").onclick=()=>{const v=localStorage.getItem(KEY());if(!v)return;const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([v],{type:"application/json"}));a.download="vault-backup.json";a.click();URL.revokeObjectURL(a.href);dirty=false;flag()};
+const pick=()=>q("vlFile").click();q("vlImp").onclick=pick;q("vlImp2").onclick=pick;
+q("vlFile").onchange=async ev=>{const f=ev.target.files[0];ev.target.value="";if(!f)return;
+ try{const v=JSON.parse(await f.text());if(!v.salt||!v.iv||!v.data)throw 0;if(get()&&!confirm("This replaces the vault stored in this browser. Continue?"))return;localStorage.setItem(KEY(),JSON.stringify({salt:v.salt,iv:v.iv,data:v.data}));dirty=false;lock()}
+ catch{alert("That file isn’t a valid vault backup.")}};
+
+q("vlSel").value=String(mins());q("vlSel").onchange=()=>{try{localStorage.setItem("vault-lock",q("vlSel").value)}catch{}bump()};
+q("vlCp").onclick=async()=>{const m=q("vlCm"),v=get();m.textContent="";
+ try{await crypto.subtle.decrypt({name:"AES-GCM",iv:ub(v.iv)},await derive(q("vlCo").value,ub(v.salt)),ub(v.data))}catch{m.textContent="Your current master password is wrong.";return}
+ const n=q("vlCn").value;if(n.length<8){m.textContent="Use at least 8 characters.";return}if(n!==q("vlCn2").value){m.textContent="The new passwords don’t match.";return}
+ salt=crypto.getRandomValues(new Uint8Array(16));key=await derive(n,salt);await save();["vlCo","vlCn","vlCn2"].forEach(i=>{q(i).value=""});m.textContent="Master password changed. Export a new backup now, because older backups still need the old password."};
+
+lastU=uidNow();lock();
+setInterval(()=>{const u=uidNow();if(u!==lastU){lastU=u;lock()}},500);
+})();
+</script>
+<!-- ===== END PASSWORD VAULT ===== -->
 </div>
 <div class="grid" id="vtoday"></div>
 <div class="grid" id="vweek" hidden></div>
