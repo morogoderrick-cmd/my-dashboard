@@ -150,3 +150,4 @@ app.use(express.static(path.join(__dirname, "public")));
     user_id int primary key references users(id) on delete cascade, data jsonb not null, updated_at timestamptz default now())`);
   app.listen(process.env.PORT || 3000, () => console.log("Dashboard running"));
 })().catch((e) => { console.error("Startup failed:", e.message); process.exit(1); });
+
